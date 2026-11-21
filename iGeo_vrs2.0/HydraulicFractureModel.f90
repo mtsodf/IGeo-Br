@@ -45,6 +45,10 @@
         REAL(8),ALLOCATABLE:: Aperture(:),Aperture0(:)      !elemento based
         REAL(8),ALLOCATABLE:: NodeAperture0(:)              !nodal initial aperture
         REAL(8),ALLOCATABLE:: FluidPressure(:)
+        !Pressão do fluido já aplicada como carga na face de cada elemento
+        !(carregamento incremental; veja UpdateHydraulicFracture).
+        REAL(8),ALLOCATABLE:: AppliedPressure(:)
+        LOGICAL,ALLOCATABLE:: FaceLoaded(:)
         INTEGER,ALLOCATABLE:: JfractureFront(:),KfractureFront(:)
         REAL(8),ALLOCATABLE:: Jintegral(:),J_h(:)
         REAL(8),ALLOCATABLE:: cumJintegral(:,:,:)           !(1,...NZ,...NX) - Z up J-Integral
@@ -138,10 +142,27 @@
           !IF(HFmodel%Aperture(i)<1.E-5) HFmodel%Aperture(i) = 1.E-5
           GeomechanicalModel%FracAperture(iel) = HFmodel%Aperture(i)
           
-          !Umbalanced Force on fracture wall.
-          !>>> negative fy force could cause non preciesly fracture propagation.
-          fy = (p + sn) * area * HFmodel%Damage(i)                  !residual force to be applyed (over the total stress).
-          IF ( .NOT.HFmodel%FracClosure .AND. fy<0.0 ) fy = 0.0     !to avoid oscilating solution in prescribed presseure constrained simulations.
+          !Força na face da fratura.
+          !- Primeira carga do elemento (quando ele abre): libera a tensão que
+          !  a rocha transmitia pela face, fy = (p + sn) * area. Na pré-fratura
+          !  sob tensão uniforme isso é exatamente (p - Shmin) * area.
+          !- Cargas seguintes: só a variação da pressão do fluido desde a última
+          !  carga, fy = (p - p_aplicada) * area. Antes o resíduo (p + sn) era
+          !  reaplicado a cada passo, com sn = tensão média do elemento; no
+          !  elemento da ponta essa média nunca chega a -p (tensão singular),
+          !  o resíduo não se anulava e a abertura derivava acima da solução
+          !  elástica mesmo com pressão constante.
+          IF( HFmodel%FaceLoaded(i) )THEN
+            fy = (p - HFmodel%AppliedPressure(i)) * area * HFmodel%Damage(i)
+          ELSE
+            fy = (p + sn) * area * HFmodel%Damage(i)
+          END IF
+          IF ( .NOT.HFmodel%FracClosure .AND. fy<0.0 )THEN
+            fy = 0.0     !to avoid oscilating solution in prescribed presseure constrained simulations.
+          ELSE
+            HFmodel%AppliedPressure(i) = p
+            HFmodel%FaceLoaded(i) = .TRUE.
+          END IF
           force = 0
           force(2) = fy
           Load(g(1:4)) = Load(g(1:4)) + force(2)/4.0
@@ -619,7 +640,11 @@
                 HFmodel%NormalJ(3,HFmodel%NumElements),&
                 HFmodel%DJ(HFmodel%NumElements),&
                 HFmodel%ListOfyyNodes(4,HFmodel%NumElements),&
-                HFmodel%ActiveToFlow(HFmodel%NumElements)    )
+                HFmodel%ActiveToFlow(HFmodel%NumElements),&
+                HFmodel%AppliedPressure(HFmodel%NumElements),&
+                HFmodel%FaceLoaded(HFmodel%NumElements)    )
+      HFmodel%AppliedPressure = 0.0
+      HFmodel%FaceLoaded = .FALSE.
       HFmodel%Aperture = 0.0
       HFmodel%Aperture0 = 0.0
       HFmodel%NodeAperture0 = 0.0

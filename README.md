@@ -33,6 +33,11 @@ O código foi desenvolvido por **Luis Carlos de Sousa Junior** no Programa de P�
 IGeo-Br/
 ├── iGeo_vrs2.0/          # Código-fonte (Fortran 90) e scripts de build/execução (Windows .bat)
 ├── Simulation_cases/     # Arquivos de entrada (.geo) de casos de teste e validação
+├── tests/                # Testes de verificação (Python + CTest)
+├── tools/                # Pós-processamento (perfil da abertura da fratura)
+├── docs/                 # Relatórios (verificação de Sneddon)
+├── CMakeLists.txt        # Build com CMake (gfortran) e testes com CTest
+├── requirements.txt      # Dependências Python (testes e pós-processamento)
 └── LICENSE.md            # Licença MIT
 ```
 
@@ -105,7 +110,16 @@ IGeo-Br/
 Há dois caminhos de build:
 
 - **Windows, compilador Intel** (`Build.bat`): Intel Fortran (`ifort` ou `ifx`), Intel MKL e OpenMP.
-- **macOS / Linux, gfortran** (`Makefile`): GNU Fortran com OpenMP e BLAS/LAPACK. No macOS, o BLAS/LAPACK vem do framework Accelerate, que já faz parte do sistema. Com Homebrew: `brew install gcc`.
+- **macOS / Linux, gfortran** (`Makefile` ou `CMakeLists.txt`): GNU Fortran com OpenMP e BLAS/LAPACK; CMake ≥ 3.21 para o build com CMake. No macOS, o BLAS/LAPACK vem do framework Accelerate, que já faz parte do sistema. Com Homebrew: `brew install gcc`.
+
+Os testes de verificação e as ferramentas de pós-processamento usam Python 3 com numpy (≥ 2.0) e matplotlib, listados em `requirements.txt`. Crie o ambiente na raiz do repositório:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+O CMake e os Makefiles usam `.venv/bin/python3` quando esse ambiente existe; sem ele, usam o `python3` do PATH.
 
 O Intel ifx não existe para macOS, então em Mac o único caminho é o gfortran.
 
@@ -151,6 +165,21 @@ O código foi escrito para o compilador Intel. Para compilar com gfortran sem al
 | BLAS/LAPACK (`dswap`, `dgeev`) | framework Accelerate no macOS; `-llapack -lblas` em outros sistemas (`make LAPACK_LIBS=-lopenblas`, por exemplo) |
 
 Os arquivos `compat/`, `Makefile` e `mkdeps.awk` não são usados pelo `Build.bat`.
+
+### gfortran (macOS / Linux) com CMake
+
+O `CMakeLists.txt` da raiz compila os mesmos fontes, com os mesmos flags do `Makefile`, e registra os testes de verificação no CTest. O CMake resolve sozinho a ordem dos módulos.
+
+```bash
+cmake -S . -B build                          # Release: -O3 -mcpu=native (ou -march=native), OpenMP
+cmake --build build -j8                      # build/iGeo
+cmake --build build -t BuildGraphs           # build/BuildGraphs (pós-processador)
+
+cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug   # -O0, -fcheck=all, backtrace
+cmake --build build-debug -j8
+```
+
+Opções: `-DIGEO_NATIVE=OFF` (não otimiza para a CPU da máquina), `-DBLA_VENDOR=OpenBLAS` (escolhe o BLAS/LAPACK; no macOS o padrão é o Accelerate), `-DIGEO_TESTS=OFF` (não registra os testes) e `-DIGEO_PYTHON=/caminho/python3` (interpretador dos testes; o padrão é o `.venv` da raiz, se existir, senão o `python3` do PATH).
 
 ---
 
@@ -259,12 +288,48 @@ A referência definitiva de cada bloco é a rotina que o lê, em `ProblemDefinit
 
 ---
 
+## Testes de verificação
+
+`tests/` contém casos com solução analítica conhecida, executados pelo iGeo e comparados automaticamente com a solução (Python 3 + numpy, `unittest`):
+
+Com CMake, depois de compilar (os testes usam o executável do próprio build):
+
+```bash
+ctest --test-dir build --output-on-failure -j8         # todos os testes, ~20 s
+ctest --test-dir build -L sneddon -V                   # só os de Sneddon, com a saída
+ctest --test-dir build-debug --output-on-failure -j8   # com o build de debug, ~55 s
+```
+
+Com o `Makefile`:
+
+```bash
+make -C iGeo_vrs2.0 test               # compila e roda os testes
+make -C iGeo_vrs2.0 test MODE=debug    # com o build de debug (verificação de limites)
+```
+
+No CTest, cada classe de teste é um teste: `sneddon.solucao_analitica` compara o caso com Sneddon, e `sneddon.convergencia_e_pressao_mantida` verifica a convergência com a malha e a abertura com a pressão mantida. Um teste pulado (executável não encontrado) conta como falha. Os casos usam 4 threads, e o CTest reserva 4 processadores por teste com `-j`.
+
+| Caso | Solução de referência | O que é verificado |
+|---|---|---|
+| `tests/sneddon_injection/` | Fratura pressurizada em deformação plana (Sneddon, 1946; Sneddon & Lowengrub, 1969): `w(x) = 4(1−ν²)Δp/E·√(L²−x²)` | Injeção a pressão controlada numa fratura fixa (L = 5 m) em rocha elástica impermeável: pressão uniforme na fratura, abertura no centro (±2 %), perfil (erro L2 < 3 %), volume (±3 %), face fechada fora da fratura, redução do erro com o refino da malha e abertura constante com a pressão mantida |
+
+Com a malha do teste (dx = 0,25 m, domínio 20L), o erro é de −1,4 % no centro, 1,9 % no perfil e −2,4 % no volume. Ele diminui com o refino da malha e com o tamanho do domínio, porque vem dos elementos lineares e do contorno fixo.
+
+Esse caso levou a duas correções no carregamento da fratura, descritas em detalhe, com figuras, no relatório [`docs/relatorio_sneddon/`](docs/relatorio_sneddon/README.md) (versão em PDF: `make -C docs/relatorio_sneddon`):
+
+- `ViscoplasticExplicitySolver.f90`: atribuição a um vetor ainda não alocado (falha de segmentação com gfortran).
+- `HydraulicFractureModel.f90` (`UpdateHydraulicFracture`): antes, a cada passo o código reaplicava como carga na face o resíduo `p + σyy`, com σyy médio do elemento. No elemento da ponta a tensão é singular e o resíduo nunca se anulava, então a abertura crescia de passo em passo mesmo com a pressão constante (+10 % no 6º passo). Agora a primeira carga de cada elemento continua sendo `p + σyy`, que libera a tensão da face, e as seguintes aplicam só a variação da pressão do fluido.
+
+Limitação que permanece: **injeção a vazão controlada em rocha impermeável não é estável.** O acoplamento sequencial fluxo → mecânica só considera a complacência da fratura no passo seguinte, e a pressão diverge. Por isso o caso usa pressão controlada.
+
+---
+
 ## Pós-processamento: perfil da abertura da fratura
 
 `tools/perfil_abertura_fratura.py` lê os VTK de passo (`<NomeDoPoço>_<passo>.vtk`), identifica o plano da fratura (a primeira fileira de elementos da malha BOX ou RAD) e gera uma figura com o perfil vertical da abertura junto ao poço, o perfil ao longo do comprimento e o mapa da abertura no plano da fratura. Também imprime um resumo por passo (abertura máxima, altura e comprimento abertos) e pode exportar os dados em CSV.
 
 ```bash
-pip install numpy matplotlib
+source .venv/bin/activate      # ambiente criado com requirements.txt (ver Requisitos)
 python3 tools/perfil_abertura_fratura.py Simulation_cases --poco LinearFlow
 python3 tools/perfil_abertura_fratura.py caso/ --z -2480 --passos 1-10 --csv abertura.csv
 ```

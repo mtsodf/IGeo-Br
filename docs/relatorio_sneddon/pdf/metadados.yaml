@@ -1,0 +1,23 @@
+# Metadados do pandoc para o relatório em PDF (usado pelo Makefile).
+lang: pt-BR
+documentclass: article
+papersize: a4
+fontsize: 11pt
+geometry: margin=2.5cm
+linestretch: 1.15
+# Fontes (definidas no Makefile): Palatino e Menlo, do macOS, têm os símbolos
+# usados no texto (σ, ν, Δ, ≈, ≥, ⁻⁵); a seta → vem do modo matemático.
+# Em outro sistema: make FONTE="DejaVu Serif" FONTE_MONO="DejaVu Sans Mono" (por exemplo).
+colorlinks: true
+linkcolor: destaque
+urlcolor: destaque
+toc: true
+toc-depth: 2
+header-includes:
+  - \definecolor{destaque}{HTML}{2A78D6}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \usepackage{caption}
+  - \captionsetup{labelformat=empty,font={small,it},justification=justified,skip=4pt}
+  - \usepackage{fvextra}
+  - \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\{\}}

@@ -4,6 +4,7 @@
 #   make              compila o simulador (build/iGeo)
 #   make graphs       compila o pós-processador de gráficos (build/BuildGraphs)
 #   make run CASE=arquivo.geo [CASEDIR=../Simulation_cases]
+#   make test         compila e roda os testes de verificação (../tests)
 #   make clean        remove o diretório build/
 #
 # Opções:
@@ -93,7 +94,7 @@ vpath %.f90 . compat
 # ---------------------------------------------------------------------------
 # Regras
 # ---------------------------------------------------------------------------
-.PHONY: all graphs run clean help
+.PHONY: all graphs run test clean help
 .DEFAULT_GOAL := all
 
 all: $(IGEO)
@@ -128,8 +129,15 @@ run: $(IGEO)
 	@test -n "$(CASE)" || { echo "Uso: make run CASE=arquivo.geo [CASEDIR=pasta]"; exit 1; }
 	./$(IGEO) "$(CASEDIR)" "$(CASE)"
 
+# Testes de verificação (Python 3 + numpy), usando o executável deste modo.
+# Usa o ambiente ../.venv (requirements.txt) se existir; senão, python3 do PATH.
+VENV_PYTHON := $(abspath ../.venv/bin/python3)
+PYTHON ?= $(if $(wildcard $(VENV_PYTHON)),$(VENV_PYTHON),python3)
+test: $(IGEO)
+	IGEO_BIN=$(abspath $(IGEO)) $(PYTHON) -m unittest discover -s ../tests -v
+
 clean:
 	rm -rf $(BUILDDIR)
 
 help:
-	@sed -n '2,16p' Makefile | sed 's/^# \{0,1\}//'
+	@sed -n '2,17p' Makefile | sed 's/^# \{0,1\}//'

@@ -1,0 +1,14 @@
+# Dependências Python do iGeo (testes de verificação e pós-processamento).
+#
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt
+#
+# O CMake (tests/CMakeLists.txt) e os Makefiles usam .venv/bin/python3 quando
+# esse ambiente existe.
+
+# tests/test_sneddon_injection.py, tools/perfil_abertura_fratura.py
+# (numpy.trapezoid requer numpy >= 2.0)
+numpy>=2.0
+
+# tools/perfil_abertura_fratura.py (figuras), docs/relatorio_sneddon/gerar_figuras.py
+matplotlib>=3.8

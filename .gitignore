@@ -1,6 +1,13 @@
 # Build com gfortran (Makefile)
 iGeo_vrs2.0/build/
+
+# Build com CMake (pastas de build na raiz)
+/build/
+/build-*/
 *.dSYM/
+
+# Relatório em PDF (docs/relatorio_sneddon/Makefile)
+docs/relatorio_sneddon/build/
 
 # Build com o compilador Intel (Build.bat)
 *.exe
@@ -27,6 +34,7 @@ OUTPUT.txt
 # Python
 __pycache__/
 *.pyc
+.venv/
 
 # macOS
 .DS_Store

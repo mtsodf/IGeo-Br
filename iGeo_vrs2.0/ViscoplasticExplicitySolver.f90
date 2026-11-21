@@ -145,7 +145,8 @@
       Container%tensor19 = 0.0
       
       !DIAGONAL PRE-CONDITIONER.
-      diag_precon = 0.0
+      !diag_precon é alocado e preenchido por CGpreConditioner (atribuir antes
+      !da alocação é comportamento indefinido).
       CALL CGpreConditioner(Matrix_a,Matrix_ia,Matrix_ja,diag_precon)
       
       CALL sample(GeomechanicalModel%element,points,weights)
