@@ -32,10 +32,10 @@
 
       INTEGER,ALLOCATABLE:: num(:) ,&  !conectividade de um elemento
                             g(:) !vetor com os graus de liberdade de cada elemento.
-      REAL(8),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integraÁ„o
-                            weights(:),&  !peso dos pontos de integraÁ„o
-                            coord(:,:),&  !coordenada dos nÛs de um elemento
-                            g_coord(:,:)  !coordenada dos nÛs da malha.
+      REAL(8),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integração
+                            weights(:),&  !peso dos pontos de integração
+                            coord(:,:),&  !coordenada dos nós de um elemento
+                            g_coord(:,:)  !coordenada dos nós da malha.
       REAL(8),ALLOCATABLE:: sigma(:,:),elemNodalForce(:)
 
       INTEGER:: nels,nn,nip

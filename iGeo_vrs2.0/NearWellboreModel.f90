@@ -20,17 +20,17 @@
       INTEGER:: NumElements,&
                 NumNodes
 
-      !Divis�o da malha estrutural.
+      !Divisão da malha estrutural.
       INTEGER:: NTHETA, NRAD, NZ
 
-      INTEGER:: ElementType=3   !1 - tetraedro de 4 n�s e 3 pontos de Gauss.
-                                !2 - tetraedro de 8 n�s e 6 pontos de Gauss.
-                                !3 - hexa�dro de 8 n�s e 8 pontos de Gauss.
-                                !4 - hexa�dro de 14 n�s e 27 pontos de Gauss.
-                                !5 - hexa�dro de 20 n�s e 27 pontos de Gauss.
+      INTEGER:: ElementType=3   !1 - tetraedro de 4 nós e 3 pontos de Gauss.
+                                !2 - tetraedro de 8 nós e 6 pontos de Gauss.
+                                !3 - hexaédro de 8 nós e 8 pontos de Gauss.
+                                !4 - hexaédro de 14 nós e 27 pontos de Gauss.
+                                !5 - hexaédro de 20 nós e 27 pontos de Gauss.
 
       REAL(8),ALLOCATABLE:: Coords(:,:)             !coordenadas nodais.
-      INTEGER,ALLOCATABLE:: ElementIncidence(:,:)   !incid�ncia dos elementos.
+      INTEGER,ALLOCATABLE:: ElementIncidence(:,:)   !incidência dos elementos.
 
       !***************************************************************************
       !STRUCTURAL MODEL.
@@ -90,7 +90,7 @@
 
       CHARACTER(LEN=15)::element='hexahedron'
 
-      !Vari�veis da progress�o geom�trica para formar os raios da malha.
+      !Variáveis da progressão geométrica para formar os raios da malha.
       INTEGER:: n
       REAL(8):: sn,a1,q,radius
       REAL(8),ALLOCATABLE:: r(:)
@@ -120,7 +120,7 @@
         zPillars( Well%NZ+1 ) =  zPillars( Well%NZ ) - 1.0
       END IF
           
-      !Criando falsos pilares em x,y para posterior corre��o de coordenadas.
+      !Criando falsos pilares em x,y para posterior correção de coordenadas.
       DO i=1 , (Well%NRAD+1)
         xPillars(i) = i
       END DO
@@ -434,7 +434,7 @@
         zPillars( Well%NZ+1 ) =  zPillars( Well%NZ ) - 1.0
       END IF
           
-      !Criando falsos pilares em x,y para posterior corre��o de coordenadas.
+      !Criando falsos pilares em x,y para posterior correção de coordenadas.
       DO i=1 , (Well%NRAD+1)
         xPillars(i) = i
       END DO

@@ -11,7 +11,7 @@
 
   CONTAINS
 
-    !Rotina para c�lculo de determinante de matrizes pequenas.
+    !Rotina para cálculo de determinante de matrizes pequenas.
     !Smith & Griffiths 2004.
     SUBROUTINE MatrixDeterminant(jac,det)
 
@@ -100,7 +100,7 @@
       RETURN
     END SUBROUTINE InvertMatrix
 
-    !Rotina para c�lculo de produtor escalar.
+    !Rotina para cálculo de produtor escalar.
     FUNCTION DotProduct(VectorA,VectorB)
 
       IMPLICIT NONE
@@ -111,7 +111,7 @@
 
       END FUNCTION DotProduct
 
-      !Rotina para c�lculo de dist�ncia entre dois pontos.
+      !Rotina para cálculo de distância entre dois pontos.
       FUNCTION Distance(Coords1,Coords2)
 
       IMPLICIT NONE
@@ -124,7 +124,7 @@
 
       END FUNCTION Distance
 
-      !Rotina para c�lculo de vetor entre 2 pontos.
+      !Rotina para cálculo de vetor entre 2 pontos.
       FUNCTION Vector2Pts(Coords1,Coords2)
 
       IMPLICIT NONE
@@ -137,7 +137,7 @@
 
     END FUNCTION Vector2Pts
 
-    !Rotina para c�lculo de vetor entre 2 pontos.
+    !Rotina para cálculo de vetor entre 2 pontos.
     FUNCTION Vector3Pts(Coords1,Coords2,Coords3)
 
       IMPLICIT NONE
@@ -156,7 +156,7 @@
     END FUNCTION Vector3Pts
 
     SUBROUTINE Triangle( coord, Area, normal )
-      !Subrotina para c·lculo de ·rea e vetor normal a um tri‚ngulo a partir das
+      !Subrotina para cálculo de área e vetor normal a um triângulo a partir das
       !coordenadas nodais.
       !
       IMPLICIT NONE
@@ -171,7 +171,7 @@
       REAL(iwp)::a(3), b(3),absProdutoVetorial, produtoVetorial(3)
       REAL(iwp):: one = 1.0_iwp, two = 2.0_iwp
 
-      !FormaÁ„o dos vetores
+      !Formação dos vetores
       DO i=1,3
         a(i) = coord(2,i) - coord(1,i)
         b(i) = coord(3,i) - coord(1,i)
@@ -186,7 +186,7 @@
       absProdutoVetorial = SQRT( produtoVetorial(1)**2 + produtoVetorial(2)**2 + produtoVetorial(3)**2 )
       normal = one / absProdutoVetorial * produtoVetorial
 
-      !¡rea tri‚ngulo = metada da ·rea do paralelogramo formado pelos 2 vetores.
+      !Área triângulo = metada da área do paralelogramo formado pelos 2 vetores.
       Area = absProdutoVetorial / two
 
       RETURN

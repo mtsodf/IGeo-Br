@@ -1,4 +1,4 @@
-﻿  
+  
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
@@ -567,6 +567,8 @@
     !***************************************************************************
       
     Problem%WellData = Problem%WellData
+    CALL AllocateMissingWellData(Problem%WellData)
+    CALL AllocateMissingProblemData(Problem)
       
             
     !***************************************************************************

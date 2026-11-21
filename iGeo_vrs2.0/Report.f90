@@ -2,7 +2,7 @@
     !*****************************************************************************
     !COMPUTATIONAL GEOMECHANICS
     !Eng. Luis Carlos de Sousa Junior
-    !Programa de Pos-graduação em Geotecnia.
+    !Programa de Pos-graduaÃ§Ã£o em Geotecnia.
     !University of Brasilia
 
   
@@ -45,10 +45,10 @@
     i = LEN_TRIM(FileName)
     WRITE(text,*) FileName(1:i),'.REPORT.txt'
     IF(step==0)THEN
-      OPEN(FreeChanelNum,FILE=TRIM(text))
+      OPEN(FreeChanelNum,FILE=TRIM(ADJUSTL(text)))
       WRITE(FreeChanelNum,*)'OUTPUT REPORT'
     ELSE
-      OPEN(FreeChanelNum,FILE=TRIM(text),ACCESS='APPEND')
+      OPEN(FreeChanelNum,FILE=TRIM(ADJUSTL(text)),ACCESS='APPEND')
     END IF
     
     WRITE(FreeChanelNum,*)' '
@@ -158,10 +158,10 @@
     iel = LEN_TRIM(FileName)
     WRITE(text,*) FileName(1:iel),'.REPORT.txt'
     IF(step==0)THEN
-      OPEN(FreeChanelNum,FILE=TRIM(text))
+      OPEN(FreeChanelNum,FILE=TRIM(ADJUSTL(text)))
       WRITE(FreeChanelNum,*)'OUTPUT REPORT'
     ELSE
-      OPEN(FreeChanelNum,FILE=TRIM(text),ACCESS='APPEND')
+      OPEN(FreeChanelNum,FILE=TRIM(ADJUSTL(text)),ACCESS='APPEND')
     END IF
     
     WRITE(FreeChanelNum,*)' '
@@ -171,7 +171,7 @@
     !LAYER MECHANICAL DATA.
     WRITE(FreeChanelNum,*)'-------------------------------------------------------------------------------'
     WRITE(FreeChanelNum,*)'   k    Zavg      Max.PP   Max.Disp    S3    Max.DESV    Ws      J-int   Frac.L'
-    WRITE(FreeChanelNum,*)'          m         kPa       mm     kgf/cm²  kgf/cm²    J         J         cm'
+    WRITE(FreeChanelNum,*)'          m         kPa       mm     kgf/cmÂ²  kgf/cmÂ²    J         J         cm'
     WRITE(FreeChanelNum,*)'-------------------------------------------------------------------------------'
     DO ik=1,Nk
       

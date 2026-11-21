@@ -1,4 +1,4 @@
-﻿
+
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
@@ -129,7 +129,7 @@
       !***************************************************************************
 
       !Elastic stiffness.
-      IF(Matrices%Built==.FALSE.) THEN
+      IF(.NOT.Matrices%Built) THEN
         Matrices%Stiff%a = 0.0
         IF(TRIM(GeomechanicalModel%SolverType)=='DynamicFEM')THEN
           !CALL BuildElasticStiffness(GeomechanicalModel,Matrices,GeomechanicalModel%ActiveElements)
@@ -238,9 +238,9 @@
         
         REAL(8):: z
         
-        REAL(8),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integraÁ„o
-                              weights(:),&  !peso dos pontos de integraÁ„o
-                              coord(:,:),&  !coordenada dos nÛs de um elemento
+        REAL(8),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integração
+                              weights(:),&  !peso dos pontos de integração
+                              coord(:,:),&  !coordenada dos nós de um elemento
                               elemNodalForce(:)
         INTEGER:: globalDOFs(12),localDOFs(12)
         
@@ -323,7 +323,7 @@
               END IF
               
               !Hydrostatic stress-------------------------------------------------
-              IF( GeomechanicalModel%ActiveElements(elementNumber) == .FALSE.) THEN
+              IF( .NOT.GeomechanicalModel%ActiveElements(elementNumber)) THEN
                 GeomechanicalModel%EffectiveStressTensor(1:3,:,elementNumber) = WellData%MudWeight * Zavg
               END IF
               
@@ -504,7 +504,7 @@
             END IF
             
             !Hydrostatic stress-------------------------------------------------
-            IF( GeomechanicalModel%ActiveElements(elementNumber) == .FALSE.) THEN
+            IF( .NOT.GeomechanicalModel%ActiveElements(elementNumber)) THEN
               GeomechanicalModel%EffectiveStressTensor(1:3,:,elementNumber) = WellData%MudWeight * Zavg
             END IF
             
@@ -542,7 +542,7 @@
       INTEGER:: numEquations
       INTEGER:: nodes(4)
       INTEGER,ALLOCATABLE:: num(:),g(:)
-      REAL(8),ALLOCATABLE :: coord(:,:),g_coord(:,:)  !coordenadas dos n�s da malha.
+      REAL(8),ALLOCATABLE :: coord(:,:),g_coord(:,:)  !coordenadas dos nós da malha.
 
       REAL(8):: area,n(3),coordsTRI(3,3),area1,area2,normal1(3),normal2(3)
       REAL(8):: Zavg
@@ -653,7 +653,7 @@
             END IF
             
             !Hydrostatic stress-------------------------------------------------
-            IF( GeomechanicalModel%ActiveElements(elementNumber) == .FALSE.) THEN
+            IF( .NOT.GeomechanicalModel%ActiveElements(elementNumber)) THEN
               Zavg = SUM( coord(:,3) ) / 8.0
               GeomechanicalModel%EffectiveStressTensor(1:3,:,elementNumber) = WellData%MudWeight * Zavg
             END IF
@@ -723,7 +723,7 @@
       ListOfRestrictedDOFs = 0
       numRestrictedDOFs = 0
       DO i=1,GeomechanicalModel%NumEquations
-          IF(freeDOF(i)==.FALSE.)THEN
+          IF(.NOT.freeDOF(i))THEN
               numRestrictedDOFs = numRestrictedDOFs + 1
               ListOfRestrictedDOFs(numRestrictedDOFs) = i
           END IF

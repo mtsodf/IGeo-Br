@@ -79,7 +79,7 @@
       
       i = LEN_TRIM(VTKfileName)
       WRITE(text,*)VTKfileName(1:(i-4)),'_',TRIM(ADJUSTL(stepChar)),'.vtk'
-      OPEN(vtkFileChanel,FILE=TRIM(text))
+      OPEN(vtkFileChanel,FILE=TRIM(ADJUSTL(text)))
 
       ALLOCATE( g_coord(3,GeomechanicalModel%NumNodes) )
       g_coord = 0.0
@@ -539,8 +539,8 @@
 
       INTEGER:: nip = 1
       REAL(8):: biot, pi = 3.1415926535897932384626433832795
-      REAL(8):: tensor_s(6,1),tensor_ep(6,1)   !tensor de tensıes e deformaÁıes pl·sticas.
-      REAL(8):: Sxx,Syy,Szz,Sxy,Syz,Szx     !componentes de tens„o.
+      REAL(8):: tensor_s(6,1),tensor_ep(6,1)   !tensor de tensões e deformações plásticas.
+      REAL(8):: Sxx,Syy,Szz,Sxy,Syz,Szx     !componentes de tensão.
       REAL(8),ALLOCATABLE:: defVol(:),S3(:),S30(:)
       REAL(8):: sigm, dsbar, theta, esh
 
@@ -619,7 +619,7 @@
       RETURN
     END SUBROUTINE
     
-    !Constr�i arquivo VTK para uma malha de elementos finitos hexa�drixos quadr�ticos.
+    !Constrói arquivo VTK para uma malha de elementos finitos hexaédrixos quadráticos.
     SUBROUTINE HexLin_MeshToVTKfile( Path, FileName, FileNum, Coords, ElementIncidence )
 
         USE IO
@@ -653,7 +653,7 @@
           WRITE(FileNum,'(F20.5,F20.5,F20.5)')Coords(1,i),Coords(2,i),Coords(3,i)
         END DO
 
-        !Incid�ncia.
+        !Incidência.
         numElements= SIZE(ElementIncidence(1,:))
         
         WRITE(FileNum,'(A,I10,I10)')'CELLS ', numElements, 9*numElements
@@ -677,7 +677,7 @@
         RETURN
     END SUBROUTINE HexLin_MeshToVTKfile
 
-    !Converte a incid�ncia nodal para formato VTK para hexa�dro de 20 n�s.
+    !Converte a incidência nodal para formato VTK para hexaédro de 20 nós.
     SUBROUTINE Hex20_IncidenceCorrection( Incidence )
 
         IMPLICIT NONE
@@ -730,7 +730,7 @@
 
     END SUBROUTINE Hex20_IncidenceCorrection
 
-    !Corrige a incid�ncia do formato VTK para o elemento Hexa�drico de 8 nodes.
+    !Corrige a incidência do formato VTK para o elemento Hexaédrico de 8 nodes.
     SUBROUTINE Hex8_IncidenceCorrection( Incidence )
 
         IMPLICIT NONE
@@ -759,7 +759,7 @@
 
     END SUBROUTINE Hex8_IncidenceCorrection
 
-    !Imprime resultados de c�lula no arquivo VTK.
+    !Imprime resultados de célula no arquivo VTK.
     SUBROUTINE WriteCellResults2VTK(FreeChanelNum,Problem,WellData,VariableName,Vector)
 
         USE ProblemDefinition

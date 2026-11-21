@@ -81,7 +81,7 @@ MODULE WF_MEDSolver
     numEquations = GeomechanicalModel%NumEquations
     
     ! Elastic stiffness
-    IF(Problem%Structural_flag.AND.Matrices%Built==.FALSE.) THEN
+    IF(Problem%Structural_flag.AND..NOT.Matrices%Built) THEN
       CALL PrintMessage(.FALSE.,.FALSE.,'Building elastic stiffness matrix')
       CALL BuildElasticStiffness(GeomechanicalModel,Matrices,GeomechanicalModel%ActiveElements)
     END IF
@@ -502,8 +502,8 @@ MODULE WF_MEDSolver
  !             CALL UpdateStrainWork(GeomechanicalModel,tensor,du)
  !             tensor = GeomechanicalModel%EffectiveStressTensor - variablesInitial%EffectiveStressTensor            !effective stress increment since initial
  !             CALL PropagateFracture_TractionDamage(HFmodel,GeomechanicalModel,&
- !                                                   StructuralBC%ListOfRestrictedDOFs,tensor)!,&                    !Obs.: n�o usar StructuralBC_modif para n�o restringir os n�s. O StructuralBC_modif p�ra o n�
- !                                                   !Load(0:))                                                      !      quando o deslocamento fica nulo, mas n�o imp�e a restri��o, liberando a fratura para dilatar.
+ !                                                   StructuralBC%ListOfRestrictedDOFs,tensor)!,&                    !Obs.: não usar StructuralBC_modif para não restringir os nós. O StructuralBC_modif pára o nó
+ !                                                   !Load(0:))                                                      !      quando o deslocamento fica nulo, mas não impõe a restrição, liberando a fratura para dilatar.
  !             !du = displacement
  !           END IF
  !           IF( COUNT(GeomechanicalModel%IsFractured) > nunOpenFracElements ) THEN
@@ -659,8 +659,8 @@ MODULE WF_MEDSolver
     REAL(8):: det
     REAL(8),ALLOCATABLE:: g_coord(:,:),&    !nodal coordenates.
                           coord(:,:)        !element nodal coordenates.
-    REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integra��o.
-                          weights(:)        !peso dos pontos de integra��o.
+    REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integração.
+                          weights(:)        !peso dos pontos de integração.
     REAL(8),ALLOCATABLE:: jac(:,:),der(:,:),deriv(:,:)
 
     REAL(8):: elemVOL

@@ -2,7 +2,7 @@
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
-  !Programa de Pos-graduação em Geotecnia.
+  !Programa de Pos-graduaÃ§Ã£o em Geotecnia.
   !University of Brasilia
 
 

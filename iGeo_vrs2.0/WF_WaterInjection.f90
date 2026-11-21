@@ -2,7 +2,7 @@
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
-  !Programa de Pos-gradua��o em Geotecnia.
+  !Programa de Pos-graduação em Geotecnia.
   !University of Brasilia
   !*****************************************************************************
 
@@ -80,7 +80,7 @@
     
     !Viscoplastic solver parameters.
     REAL(8)::cg_tol,&                         !linear solver's tolerance - ratio between primary variables
-             tol                              !viscoplastic toler�ncia do solver viscopl�stico - raz�o de m�ximas for�as desbalanceadas
+             tol                              !viscoplastic tolerância do solver viscoplástico - razão de máximas forças desbalanceadas
     INTEGER::limit,&                          !maximum iteractions for linear solver
              cg_limit                         !maximum iteractions for viscoplastic solver
     
@@ -135,7 +135,7 @@
     REAL(8),ALLOCATABLE:: fractureTIPsReports(:,:)                              !(1,:) - Top
                                                                                 !(2,:) - Base
                                                                                 !(3,:) - X
-                                                                                !(4.:) - Fracture volume (m�)
+                                                                                !(4.:) - Fracture volume (m³)
     LOGICAL:: fractureIteration
     INTEGER:: numFracElements
     
@@ -178,7 +178,7 @@
     DispBC%ListYnodalRestriction = 0
     
     !Elastic stiffness.
-    IF(Problem%Structural_flag.AND.Matrices%Built==.FALSE.) THEN
+    IF(Problem%Structural_flag.AND..NOT.Matrices%Built) THEN
       CALL PrintMessage(.FALSE.,.FALSE.,'BUILDING ELASTIC STIFFNESS.')
       IF(TRIM(GeomechanicalModel%SolverType)=='DynamicFEM')THEN
         !CALL BuildElasticStiffness(GeomechanicalModel,Matrices,GeomechanicalModel%ActiveElements)
@@ -628,8 +628,8 @@
               CALL UpdateStrainWork(GeomechanicalModel,tensor,du)
               tensor = GeomechanicalModel%EffectiveStressTensor - variablesInitial%EffectiveStressTensor            !effective stress increment since initial
               CALL PropagateFracture_TractionDamage(HFmodel,GeomechanicalModel,&
-                                                    StructuralBC%ListOfRestrictedDOFs,tensor)!,&                    !Obs.: n�o usar StructuralBC_modif para n�o restringir os n�s. O StructuralBC_modif p�ra o n�
-                                                    !Load(0:))                                                      !      quando o deslocamento fica nulo, mas n�o imp�e a restri��o, liberando a fratura para dilatar.
+                                                    StructuralBC%ListOfRestrictedDOFs,tensor)!,&                    !Obs.: não usar StructuralBC_modif para não restringir os nós. O StructuralBC_modif pára o nó
+                                                    !Load(0:))                                                      !      quando o deslocamento fica nulo, mas não impõe a restrição, liberando a fratura para dilatar.
               !du = displacement
             END IF
             IF( COUNT(GeomechanicalModel%IsFractured) > nunOpenFracElements ) THEN

@@ -352,11 +352,11 @@ CONTAINS
         
         !-UNDRAINED ELEMENTS------------------------------------------------------
 
-        i = COUNT(GeomechanicalModel%Undrained==.TRUE.,1) + q
+        i = COUNT(GeomechanicalModel%Undrained,1) + q
         ALLOCATE( ListOfUndrainedElements(0:i) )
         i = 0
         DO iel=1,NumElements
-          IF( GeomechanicalModel%Undrained(iel) == .TRUE. )THEN
+          IF( GeomechanicalModel%Undrained(iel) )THEN
             i = i + 1
             ListOfUndrainedElements(i) = iel
           END IF
@@ -1200,7 +1200,7 @@ CONTAINS
             e = e * (1.0-GeomechanicalModel%DamageStiffness(iel))
             !v = GeomechanicalModel%Poisson(iel)
             v = 0.5 * (GeomechanicalModel%TransverIsotropicProps(iel)%n1 + GeomechanicalModel%TransverIsotropicProps(iel)%n2)
-            IF(GeomechanicalModel%Undrained(iel) == .TRUE.)THEN
+            IF(GeomechanicalModel%Undrained(iel))THEN
               k = e/3.0/(1.0-2.0*v) + GeomechanicalModel%PoreFluidBulkMod(iel)
               e = k*3.0*(1.0-2.0*v)
             END IF
@@ -1342,7 +1342,7 @@ CONTAINS
       LOGICAL,ALLOCATABLE:: ElementsToAdd(:)
 
       ! Allocating full stiffness matrix
-      IF( SIZE(Matrices%Stiff%ia)==0 )THEN
+      IF( .NOT.ALLOCATED(Matrices%Stiff%ia) )THEN
         CALL SparseStiffnessMatrixCSR( GeomechanicalModel, Matrices%Stiff%a, &
                                         Matrices%Stiff%ia, Matrices%Stiff%ja )
       END IF

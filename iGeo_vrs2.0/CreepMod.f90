@@ -2,7 +2,7 @@
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
-  !Programa de Pos-graduação em Geotecnia.
+  !Programa de Pos-graduaÃ§Ã£o em Geotecnia.
   !University of Brasilia
 
 
@@ -41,10 +41,10 @@
         INTEGER:: i,iel,n
         INTEGER:: numSteps, subStep
 
-        REAL(8):: cg_tol,&                         !tolerância do solver linear de equações - razão de máximos deslocamentos
-                  tol                              !tolerância do solver viscoplástico - razão de máximas forças desbalanceadas
-        INTEGER:: limit,&                          !limite de iterações para o solver viscoplástico
-                  cg_limit                         !limete de iterações para o solver linear de equações
+        REAL(8):: cg_tol,&                         !tolerÃ¢ncia do solver linear de equaÃ§Ãµes - razÃ£o de mÃ¡ximos deslocamentos
+                  tol                              !tolerÃ¢ncia do solver viscoplÃ¡stico - razÃ£o de mÃ¡ximas forÃ§as desbalanceadas
+        INTEGER:: limit,&                          !limite de iteraÃ§Ãµes para o solver viscoplÃ¡stico
+                  cg_limit                         !limete de iteraÃ§Ãµes para o solver linear de equaÃ§Ãµes
         
         REAL(8):: t,dt,dt_err,dt_const,elapsedTime,tal
         REAL(8):: maxYieldFunction
@@ -137,7 +137,7 @@
       IMPLICIT NONE
   
       !******************************************
-      !VARIÁVEIS
+      !VARIÃVEIS
       !******************************************
       
       !Input.
@@ -148,50 +148,50 @@
       REAL(8),INTENT(IN OUT):: MaxYieldFunction
       
       INTEGER,ALLOCATABLE:: g_num(:,:),&  !conectividade dos elementos
-                             g_g(:,:)  !matriz para identificação dos graus de liberdades dos nós
-      REAL(8),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integração
-                            weights(:),&  !peso dos pontos de integração
-                            g_coord(:,:)  !coordenada dos nós
+                             g_g(:,:)  !matriz para identificaÃ§Ã£o dos graus de liberdades dos nÃ³s
+      REAL(8),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integraÃ§Ã£o
+                            weights(:),&  !peso dos pontos de integraÃ§Ã£o
+                            g_coord(:,:)  !coordenada dos nÃ³s
       
-      INTEGER:: ndim,&  !número de dimensões
-                nels,&  !número de elementos na malha
-                nod,&  !número de nós de deslocamento por elemento (=8 para hexaédro linear)
-                nip,&  !número de pontos de integração
-                ndof,&  !número de graus de liberdade de deslocamento por elemento
-                nst,&  !número de componentes de tensão no tensor de tensões (=6 para 3D)
+      INTEGER:: ndim,&  !nÃºmero de dimensÃµes
+                nels,&  !nÃºmero de elementos na malha
+                nod,&  !nÃºmero de nÃ³s de deslocamento por elemento (=8 para hexaÃ©dro linear)
+                nip,&  !nÃºmero de pontos de integraÃ§Ã£o
+                ndof,&  !nÃºmero de graus de liberdade de deslocamento por elemento
+                nst,&  !nÃºmero de componentes de tensÃ£o no tensor de tensÃµes (=6 para 3D)
                 neq,nn
             
-      !Variáveis estáticas.
+      !VariÃ¡veis estÃ¡ticas.
       INTEGER:: iel,i  !contadores
       REAL(8):: det,&  !determinante de matriz
-                Ea,Ec,niac,niab,&  !parâmetros do modelo ortotrópico (ver interface no módulo MODULE iMaterials)
+                Ea,Ec,niac,niab,&  !parÃ¢metros do modelo ortotrÃ³pico (ver interface no mÃ³dulo MODULE iMaterials)
                 zero=0.0,&
                 pi=ACOS(-1.)
       REAL(8):: sigm, dsbar, theta  !invariantes
       REAL(8):: f
   
-      !Variáveis dinâmicas.
+      !VariÃ¡veis dinÃ¢micas.
       INTEGER,ALLOCATABLE:: num(:) ,&                     !conectividade de um elemento
                             g(:)                          !vetor com os graus de liberdade de cada elemento
-      REAL(8),ALLOCATABLE:: coord(:,:),&                  !coordenada dos nós de um elemento
-                            jac(:,:),&                    !matriz jacobiana das funções de forma.
-                            der(:,:),&                    !derivadas das funções de forma dos deslocamentos em coordenadas naturais.                        
-                            deriv(:,:),&                  !derivadas das funções de forma com relação às coordenadas locais e globais
-                            bload(:),&                    !cargas nodais desbalanceadas do solver viscoplástico para um elemento
-                            bee(:,:),&                    !matriz de derivadas das funções de forma
-                            dee(:,:),&                    !matriz de relações elásticas
-                            devp(:),&                     !pseudo-tensões elásticas devido a deformação plástica (=D*delta_evp)
+      REAL(8),ALLOCATABLE:: coord(:,:),&                  !coordenada dos nÃ³s de um elemento
+                            jac(:,:),&                    !matriz jacobiana das funÃ§Ãµes de forma.
+                            der(:,:),&                    !derivadas das funÃ§Ãµes de forma dos deslocamentos em coordenadas naturais.                        
+                            deriv(:,:),&                  !derivadas das funÃ§Ãµes de forma com relaÃ§Ã£o Ã s coordenadas locais e globais
+                            bload(:),&                    !cargas nodais desbalanceadas do solver viscoplÃ¡stico para um elemento
+                            bee(:,:),&                    !matriz de derivadas das funÃ§Ãµes de forma
+                            dee(:,:),&                    !matriz de relaÃ§Ãµes elÃ¡sticas
+                            devp(:),&                     !pseudo-tensÃµes elÃ¡sticas devido a deformaÃ§Ã£o plÃ¡stica (=D*delta_evp)
                             eld(:),&                      !deslocamentos nodais de um elemento
-                            eload(:),&                    !contribuição de um ponto de integração para o vetor global bload
-                            erate(:),&                    !taxa de deformação de fluência
-                            erate_primary(:),&            !taxa de deformação de fluência primária
-                            evp(:),&                      !incremento de deformação plástica
-                            evpt(:,:),&                   !deformação plástica acumulada
-                            eps(:,:),&                    !termos do tensor de deformações totais (elástica + plástica)
-                            sigma(:,:),&                  !incremento do tensor de tensões
-                            tensor_s(:,:),&               !tensor de tensões do estágio de carregamento anterior
-                            anisotropia_Ec(:),&           !vetor de anisotropia Ec (=Ec/Ea), onde Ea está no arquivo .prp.
-                            anisotropia_niac(:)           !vetor de anisotropia niab (=niab/niac), onde niac está no arquivo .prp.
+                            eload(:),&                    !contribuiÃ§Ã£o de um ponto de integraÃ§Ã£o para o vetor global bload
+                            erate(:),&                    !taxa de deformaÃ§Ã£o de fluÃªncia
+                            erate_primary(:),&            !taxa de deformaÃ§Ã£o de fluÃªncia primÃ¡ria
+                            evp(:),&                      !incremento de deformaÃ§Ã£o plÃ¡stica
+                            evpt(:,:),&                   !deformaÃ§Ã£o plÃ¡stica acumulada
+                            eps(:,:),&                    !termos do tensor de deformaÃ§Ãµes totais (elÃ¡stica + plÃ¡stica)
+                            sigma(:,:),&                  !incremento do tensor de tensÃµes
+                            tensor_s(:,:),&               !tensor de tensÃµes do estÃ¡gio de carregamento anterior
+                            anisotropia_Ec(:),&           !vetor de anisotropia Ec (=Ec/Ea), onde Ea estÃ¡ no arquivo .prp.
+                            anisotropia_niac(:)           !vetor de anisotropia niab (=niab/niac), onde niac estÃ¡ no arquivo .prp.
 
       INTEGER:: modelNumber
       REAL(8):: temp
@@ -205,7 +205,7 @@
       nels = GeomechanicalModel%NumElements
       nod = GeomechanicalModel%NumNodesPerElement
           
-      !Alocação de memória.
+      !AlocaÃ§Ã£o de memÃ³ria.
       ALLOCATE( g(ndof),num(nod),bee(nst,ndof),eld(ndof),bload(ndof),                   &
                 coord(nod,ndim),dee(nst,nst),deriv(ndim,nod),devp(nst),                 &
                 eload(ndof),erate(nst),evp(nst),sigma(nst,nip),eps(nst,nip),            &
@@ -223,8 +223,8 @@
       CALL sample(GeomechanicalModel%element,points,weights)
       
       !******************************************
-      !CÁLCULO DE DEFORMAÇÕES, TENSÕES E CARGA
-      !VISCOPLÁSTICA DESBALANCEADA.
+      !CÃLCULO DE DEFORMAÃ‡Ã•ES, TENSÃ•ES E CARGA
+      !VISCOPLÃSTICA DESBALANCEADA.
       !******************************************
       GeomechanicalModel%CreepWork(1) = zero
       GeomechanicalModel%CreepStrainIncrementTensor = 0.0
@@ -257,11 +257,11 @@
               DO i=1,nip
                 
                 !Derivative of shape functions [B].(*)
-                CALL shape_der(der,points,i)  !derivada das funções de forma
-                jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integração i
+                CALL shape_der(der,points,i)  !derivada das funÃ§Ãµes de forma
+                jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integraÃ§Ã£o i
                 CALL determinante(jac,det)  !determinante do jacobiano
                 CALL invert(jac)  !inverso do jacobiano
-                deriv=MATMUL(jac,der)  !derivadas das funções de forma em coordenadas reais
+                deriv=MATMUL(jac,der)  !derivadas das funÃ§Ãµes de forma em coordenadas reais
                 CALL beemat(bee,deriv)  !Matriz de derivadas B
 
                 !************************************************************************************
@@ -277,14 +277,14 @@
                 GeomechanicalModel%PlasticStrainTensor(:,i,iel) = GeomechanicalModel%PlasticStrainTensor(:,i,iel) + evp
                 
                 !Umbalanced stress due evp
-                devp = MATMUL(dee,evp)                                    !DeltaTensão devido o DeltaDeformacaoPlastica (TENSÃO DESBALANCEADA).
+                devp = MATMUL(dee,evp)                                    !DeltaTensÃ£o devido o DeltaDeformacaoPlastica (TENSÃƒO DESBALANCEADA).
                 
                 !Saving creep strain rate
                 CALL invar(erate,sigm,CreepStrainRate(i,iel),theta)
 
                 !Integration of umbalanced load "eload" ( {b} = devp*[B] ).
-                eload = MATMUL(devp,bee)               !transposto[B] * {DeltaTensão}
-                bload = bload + eload*det*weights(i)   !integral(BT*Delta.Tensão)
+                eload = MATMUL(devp,bee)               !transposto[B] * {DeltaTensÃ£o}
+                bload = bload + eload*det*weights(i)   !integral(BT*Delta.TensÃ£o)
                 
                 !Creep work
                 GeomechanicalModel%CreepWork(1) = GeomechanicalModel%CreepWork(1) + &
@@ -292,7 +292,7 @@
                 
               END DO  !Gauss points
 
-              !Atualização das forças desbalanceadas globais com a contribuição do elemento------------
+              !AtualizaÃ§Ã£o das forÃ§as desbalanceadas globais com a contribuiÃ§Ã£o do elemento------------
               Loads(g) = Loads(g) + bload
     
           END IF !GeomechanicalModel%ActiveElements(iel)
@@ -314,42 +314,42 @@
         USE ConstitutiveGeoModels
         USE SolidMechanicsLib
   
-        !VARIÁVEIS.
+        !VARIÃVEIS.
         IMPLICIT NONE
         TYPE(Model),INTENT(IN):: GeomechanicalModel
         INTEGER,INTENT(IN):: ElementNumber
-        REAL(8),INTENT(IN)::  tensor_s(:)                       !tensor de tensões do estágio de carregamento anterior
-        REAL(8),INTENT(IN OUT):: Temperature,F                  !função de escoamento
-        REAL(8),INTENT(IN OUT)::  erate(:)                      !taxa de deformação de fluência total
+        REAL(8),INTENT(IN)::  tensor_s(:)                       !tensor de tensÃµes do estÃ¡gio de carregamento anterior
+        REAL(8),INTENT(IN OUT):: Temperature,F                  !funÃ§Ã£o de escoamento
+        REAL(8),INTENT(IN OUT)::  erate(:)                      !taxa de deformaÃ§Ã£o de fluÃªncia total
         
-        REAL(8):: sigm,dsbar,lode_theta,&       !invariantes de tensão.
-                  dq1,dq2,dq3,&                 !derivadas do potencial de escoamento de Mohr-Coulomb com relação aos três invariantes de tensão.
-                  phi,c,&                       !ângulo de atrito (graus) e coesão.
-                  psi,&                         !ângulo de dilatação.
+        REAL(8):: sigm,dsbar,lode_theta,&       !invariantes de tensÃ£o.
+                  dq1,dq2,dq3,&                 !derivadas do potencial de escoamento de Mohr-Coulomb com relaÃ§Ã£o aos trÃªs invariantes de tensÃ£o.
+                  phi,c,&                       !Ã¢ngulo de atrito (graus) e coesÃ£o.
+                  psi,&                         !Ã¢ngulo de dilataÃ§Ã£o.
                   zero=0.0
-        REAL(8),ALLOCATABLE:: m1(:,:),m2(:,:),m3(:,:),&     !derivada dos inveriantes com relação as tensões
-                              flow(:,:)                     !derivada do potencial plástico com relação as tensões
-        INTEGER::  i,&          !número do ponto de Gauss.
-                   nst          !número de componentes de tensão no tensor de tensões (=6 para 3D).
+        REAL(8),ALLOCATABLE:: m1(:,:),m2(:,:),m3(:,:),&     !derivada dos inveriantes com relaÃ§Ã£o as tensÃµes
+                              flow(:,:)                     !derivada do potencial plÃ¡stico com relaÃ§Ã£o as tensÃµes
+        INTEGER::  i,&          !nÃºmero do ponto de Gauss.
+                   nst          !nÃºmero de componentes de tensÃ£o no tensor de tensÃµes (=6 para 3D).
                 
         REAL(8):: MU0,Qc,N2,T_Celsius,MU2
         REAL(8):: ep_rate
         REAL(8):: R=8.34145
         
-        !ALOCAÇÃO DE MEMÓRIA.
+        !ALOCAÃ‡ÃƒO DE MEMÃ“RIA.
         nst = GeomechanicalModel%NumTensorComponents
         ALLOCATE( m1(nst,nst),m2(nst,nst),m3(nst,nst),flow(nst,nst) )
         
-        !PROPRIEDADES MECÂNICAS.
+        !PROPRIEDADES MECÃ‚NICAS.
         c = 0.0
         phi = 0.0
         psi = 0.0
   
-        !CÁLCULO DA FUNÇÃO DE ESCOAMENTO.
+        !CÃLCULO DA FUNÃ‡ÃƒO DE ESCOAMENTO.
         CALL invar(tensor_s,sigm,dsbar,lode_theta)
         F = dsbar
 
-        !CÁLCULO DA TAXA DE ESCOAMENTO.
+        !CÃLCULO DA TAXA DE ESCOAMENTO.
         !dQ/dsigma = dQ/dsigm*dsigm/ds + dQ/dJ2*dJ2/ds + dQ/dJ3*dJ3/ds
         !devp/td = f * dQ/dsigma
         IF(f>zero)THEN
@@ -392,9 +392,9 @@
         
         INTEGER:: iel,ip,i,nip
         REAL(8):: dt,&
-                  phi,snph,&                                    !ângulo de atrito e seno
-                  psi,snps,&                                    !ângulo de dilatação e seno
-                  e,v,&                                         !módulo de young e coficiente de poisson
+                  phi,snph,&                                    !Ã¢ngulo de atrito e seno
+                  psi,snps,&                                    !Ã¢ngulo de dilataÃ§Ã£o e seno
+                  e,v,&                                         !mÃ³dulo de young e coficiente de poisson
                   pi,one=1.0,two=2.0,d180=180.0
         REAL(8):: f,fcr,g
         REAL(8):: a(2)
@@ -431,7 +431,7 @@
                 DO ip=1,nip
                     fcr = CreepFunction(GeomechanicalModel%EffectiveStressTensor(ip,ip,iel))
                     IF( fcr<=0.0 ) fcr = 1.0
-                    !dt = 4.0 * ( 1.0 + v)/( 3.0 * e * MU0 * EXP(-Qc/R/Temp_Kelvin(T_Celsius)) * fcr**(N2-1) ) * N2      !critério 1 de Stolle 1991, Eq. (32)
+                    !dt = 4.0 * ( 1.0 + v)/( 3.0 * e * MU0 * EXP(-Qc/R/Temp_Kelvin(T_Celsius)) * fcr**(N2-1) ) * N2      !critÃ©rio 1 de Stolle 1991, Eq. (32)
                     dt = EXP(Qc/R/Temp_Kelvin(T_Celsius))/(g*MU0*fcr**(N2-1))                                            !FLAC
                     IF( dt < TimeStep ) TimeStep = dt
                 END DO

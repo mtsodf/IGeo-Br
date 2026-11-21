@@ -17,12 +17,12 @@
       
       INTEGER:: NumEquations
       
-      !n�mero de elementos n�o nulos na matriz de rigidez.
+      !número de elementos não nulos na matriz de rigidez.
       INTEGER:: NumValues !nnz
       
       !Vetores do armazenamento CSR.
       REAL(8),ALLOCATABLE:: a(:)
-      INTEGER,ALLOCATABLE:: ia(:), ja(:)  !Ponteiros que armazenam as posi��es dos dofs na matriz.
+      INTEGER,ALLOCATABLE:: ia(:), ja(:)  !Ponteiros que armazenam as posições dos dofs na matriz.
       
     END TYPE
     
@@ -35,7 +35,7 @@
     END TYPE
     
     TYPE SolverMatricesContainer
-      LOGICAL:: Built
+      LOGICAL:: Built = .FALSE.
       TYPE(ElasticStiffnessMatrix):: Stiff
       TYPE(MassMatrix):: Mass
       TYPE(Damping):: Damp
@@ -43,7 +43,7 @@
   
   CONTAINS 
   
-    !Rotina para adicionar elements � matriz de rigidez.
+    !Rotina para adicionar elements à matriz de rigidez.
     SUBROUTINE StiffnessConstruction( GeomechanicalModel, a, ia, ja, ElementsToAdd )
       
       !USE IFPORT
@@ -58,57 +58,57 @@
       
       TYPE(Model),INTENT(IN OUT):: GeomechanicalModel
       REAL(8),ALLOCATABLE:: a(:)
-      INTEGER,ALLOCATABLE:: ia(:), ja(:)  !Ponteiros que armazenam as posi��es dos dofs na matriz.
+      INTEGER,ALLOCATABLE:: ia(:), ja(:)  !Ponteiros que armazenam as posições dos dofs na matriz.
       LOGICAL,INTENT(IN):: ElementsToAdd(:)
       
-      !VARI�VEIS EST�TICAS.
+      !VARIÁVEIS ESTÁTICAS.
       
       INTEGER:: i,j,k,l,iel,&  !contadores.
-                posicao,coluna,&  !aux�lio a localiza��o das posi��es no vetor "a".
-                nPropVetor,&  !n�mero de propriedades gravadas por elemento.
-                no,&  !auxiliar para guardar n�mero do n�.
+                posicao,coluna,&  !auxílio a localização das posições no vetor "a".
+                nPropVetor,&  !número de propriedades gravadas por elemento.
+                no,&  !auxiliar para guardar número do nó.
                 GL1,GL2,GL3  !marcadores de grau de liberdade.
       
-      INTEGER:: nels,&  !n�mero de elementos.
-                nn,&  !n�mero de n�s.
-                ndim,&  !n�mero de dimens�es do problema.
-                nst,&  !n�mero de componentes no tensor de tens�es.
-                nip,&  !n�mero de pontos de integra��o.
-                nod,&  !n�mero de n�s por elemento.
-                ndof !n�mero de graus de liberdade por elemento.
+      INTEGER:: nels,&  !número de elementos.
+                nn,&  !número de nós.
+                ndim,&  !número de dimensões do problema.
+                nst,&  !número de componentes no tensor de tensões.
+                nip,&  !número de pontos de integração.
+                nod,&  !número de nós por elemento.
+                ndof !número de graus de liberdade por elemento.
       
-      INTEGER:: nnz  !n�mero de elementos n�o nulos na matriz de rigidez (diagonal + matriz traingular superior).
-      INTEGER:: neq  !n�mero de equa��es.
+      INTEGER:: nnz  !número de elementos não nulos na matriz de rigidez (diagonal + matriz traingular superior).
+      INTEGER:: neq  !número de equações.
 
-      INTEGER:: nthreads  !n�mero de threads ou n�cleos de processamento que ser�o usados.
+      INTEGER:: nthreads  !número de threads ou núcleos de processamento que serão usados.
       
       REAL(8):: young, poisson
       REAL(8):: Pc,M,kappa,lambda,e0,P0,defVol,evol_vp
       
       INTEGER:: position, matrixPosition
-      REAL(8)::zero=0.0  !vari�veis do processo do gradientes conjugados.
-      REAL(8)::startTime,endTime  !vari�veis para marca��o de tempo gasto em segundos.
+      REAL(8)::zero=0.0  !variáveis do processo do gradientes conjugados.
+      REAL(8)::startTime,endTime  !variáveis para marcação de tempo gasto em segundos.
       CHARACTER(LEN=320)::element  !tipo de elemento finito ('hexahedron' ou 'tetrahedron').
-      LOGICAL:: propriedadesPvetor(23)  !vetor bin�rio com as propriedades que devem ser gravadas.
+      LOGICAL:: propriedadesPvetor(23)  !vetor binário com as propriedades que devem ser gravadas.
       
       INTEGER,ALLOCATABLE:: g(:),&  !vetor com graus de liberdade de um elemento.
                             num(:) ,&  !conectividade de um elemento.
-                            degrees(:,:),&  !associa��o graus de liberdade e elementos.
-                            posicoes(:),conection(:,:),conectionOrdenado(:),&  !vetores auxiliares para constru��o de conec��o entre graus de liberdade.
-                            propVetorEls(:)  !ponteiro os elementos com propriedades armazenadas (em ordem crescente de numera��o).
-      INTEGER(4),ALLOCATABLE:: listaAfinidades(:,:)  !lista de afinidades nodais (8*3,nn), 1a posi��o � um ponteiro.
+                            degrees(:,:),&  !associação graus de liberdade e elementos.
+                            posicoes(:),conection(:,:),conectionOrdenado(:),&  !vetores auxiliares para construção de conecção entre graus de liberdade.
+                            propVetorEls(:)  !ponteiro os elementos com propriedades armazenadas (em ordem crescente de numeração).
+      INTEGER(4),ALLOCATABLE:: listaAfinidades(:,:)  !lista de afinidades nodais (8*3,nn), 1a posição é um ponteiro.
 
-      INTEGER,POINTER:: nf(:,:)  !matriz de graus de liberdade dos n�s.
-                        !g_g(:,:),&  !vetor com os graus de liberdade dos n�s de cada elemento.
+      INTEGER,POINTER:: nf(:,:)  !matriz de graus de liberdade dos nós.
+                        !g_g(:,:),&  !vetor com os graus de liberdade dos nós de cada elemento.
                         !g_num(:,:),&  !conectividade dos elementos.
       REAL(8),ALLOCATABLE::   km(:,:),&  !matriz de rigidez do elemento,
                               km_fluid(:,:),&
-                              g_coord(:,:),&  !coordenadas dos n�s da malha.
-                              coord(:,:),&  !coordenada dos n�s de um elemento.
-                              points(:,:),&  !coordenadas dos pontos de integra��o.
-                              weights(:),&  !peso dos pontos de integra��o.
-                              anisotropia_Ec(:),&  !vetor de anisotropia Ec (=Ec/Ea), onde Ea est� no arquivo .prp.
-                              anisotropia_niac(:)  !vetor de anisotropia niab (=niab/niac), onde niac est� no arquivo .prp.
+                              g_coord(:,:),&  !coordenadas dos nós da malha.
+                              coord(:,:),&  !coordenada dos nós de um elemento.
+                              points(:,:),&  !coordenadas dos pontos de integração.
+                              weights(:),&  !peso dos pontos de integração.
+                              anisotropia_Ec(:),&  !vetor de anisotropia Ec (=Ec/Ea), onde Ea está no arquivo .prp.
+                              anisotropia_niac(:)  !vetor de anisotropia niab (=niab/niac), onde niac está no arquivo .prp.
       INTEGER:: globalPosition
       REAL(8):: value
       
@@ -116,7 +116,7 @@
                 
       CHARACTER(LEN=8)::HOUR
       
-      !INICIALIZA��O DE VARI�VEIS.
+      !INICIALIZAÇÃO DE VARIÁVEIS.
       neq = GeomechanicalModel%NumEquations
       element = GeomechanicalModel%element
       nels = GeomechanicalModel%NumElements
@@ -124,8 +124,8 @@
       ndim = GeomechanicalModel%NumDimensions
       nst = GeomechanicalModel%NumTensorComponents
       nip = 8 !GeomechanicalModel%NumIntegrationPoints
-              !Os pontos de integra��o para c�lculo de tens�es e deforma��es
-              !pode ser adotado como igual a 1 pelo usu�rio.
+              !Os pontos de integração para cálculo de tensões e deformações
+              !pode ser adotado como igual a 1 pelo usuário.
       nod = GeomechanicalModel%NumNodesPerElement
       ndof = GeomechanicalModel%NumDOFUperElement
       nthreads = GeomechanicalModel%NumPartitions
@@ -148,7 +148,7 @@
           num = GeomechanicalModel%ElementNodes(:,iel)   !=g_num(:,iel)
           coord = TRANSPOSE(g_coord(:,num))
         
-          !Matriz de Rigidez do Elemento Finito s�lido.
+          !Matriz de Rigidez do Elemento Finito sólido.
           IF(GeomechanicalModel%ConstitutiveGeoModel(iel) == 3)THEN
             Pc = GeomechanicalModel%MCCparameters(1,iel)
             M = GeomechanicalModel%MCCparameters(2,iel)
@@ -200,7 +200,7 @@
                     IF(ja(posicao+coluna)==g(j)) EXIT
                   END DO
                 
-                  !Armazena o valor do dof na posi��o correta.
+                  !Armazena o valor do dof na posição correta.
                   a(posicao+coluna) = a(posicao+coluna) + km(i,j)
                 
                 END IF
@@ -247,7 +247,7 @@
       !STIFFNESS MATRIX.
       !*************************************************************************
       
-      IF( SIZE(Stiff%ia)==0 )THEN
+      IF( .NOT.ALLOCATED(Stiff%ia) )THEN
         CALL SparseStiffnessMatrixCSR( GeomechanicalModel, Stiff%a, &
                                      Stiff%ia, Stiff%ja )
       END IF
@@ -267,7 +267,7 @@
       RETURN
     END SUBROUTINE
     
-    !Remove a rigidez atual do elemento e substitui por elemento anisotr�pico.
+    !Remove a rigidez atual do elemento e substitui por elemento anisotrópico.
     SUBROUTINE ReformElement( GeomechanicalModel, a, ia, ja, ElNumber, E, Enorm, Normal )
       
       !USE IFPORT
@@ -283,56 +283,56 @@
       
       TYPE(Model),INTENT(IN OUT):: GeomechanicalModel
       REAL(8),INTENT(IN OUT):: a(:)
-      INTEGER,INTENT(IN OUT):: ia(:), ja(:)  !Ponteiros que armazenam as posi��es dos dofs na matriz.
+      INTEGER,INTENT(IN OUT):: ia(:), ja(:)  !Ponteiros que armazenam as posições dos dofs na matriz.
       INTEGER,INTENT(IN):: ElNumber
       REAL(8):: E,Enorm,Normal(3)
       
-      !VARI�VEIS EST�TICAS.
+      !VARIÁVEIS ESTÁTICAS.
       INTEGER:: i,j,k,l,&  !contadores.
-                posicao,coluna,&  !aux�lio a localiza��o das posi��es no vetor "a".
-                nPropVetor,&  !n�mero de propriedades gravadas por elemento.
-                no,&  !auxiliar para guardar n�mero do n�.
+                posicao,coluna,&  !auxílio a localização das posições no vetor "a".
+                nPropVetor,&  !número de propriedades gravadas por elemento.
+                no,&  !auxiliar para guardar número do nó.
                 GL1,GL2,GL3  !marcadores de grau de liberdade.
       
-      INTEGER:: nels,&  !n�mero de elementos.
-                nn,&  !n�mero de n�s.
-                ndim,&  !n�mero de dimens�es do problema.
-                nst,&  !n�mero de componentes no tensor de tens�es.
-                nip,&  !n�mero de pontos de integra��o.
-                nod,&  !n�mero de n�s por elemento.
-                ndof !n�mero de graus de liberdade por elemento.
+      INTEGER:: nels,&  !número de elementos.
+                nn,&  !número de nós.
+                ndim,&  !número de dimensões do problema.
+                nst,&  !número de componentes no tensor de tensões.
+                nip,&  !número de pontos de integração.
+                nod,&  !número de nós por elemento.
+                ndof !número de graus de liberdade por elemento.
       
-      INTEGER:: nnz  !n�mero de elementos n�o nulos na matriz de rigidez (diagonal + matriz traingular superior).
-      INTEGER:: neq  !n�mero de equa��es.
+      INTEGER:: nnz  !número de elementos não nulos na matriz de rigidez (diagonal + matriz traingular superior).
+      INTEGER:: neq  !número de equações.
 
-      INTEGER:: nthreads  !n�mero de threads ou n�cleos de processamento que ser�o usados.
+      INTEGER:: nthreads  !número de threads ou núcleos de processamento que serão usados.
       
       REAL(8):: young, poisson
       
       INTEGER:: position, matrixPosition
-      REAL(8)::zero=0.0  !vari�veis do processo do gradientes conjugados.
-      REAL(8)::startTime,endTime  !vari�veis para marca��o de tempo gasto em segundos.
+      REAL(8)::zero=0.0  !variáveis do processo do gradientes conjugados.
+      REAL(8)::startTime,endTime  !variáveis para marcação de tempo gasto em segundos.
       CHARACTER(LEN=320)::element  !tipo de elemento finito ('hexahedron' ou 'tetrahedron').
-      LOGICAL:: propriedadesPvetor(23)  !vetor bin�rio com as propriedades que devem ser gravadas.
+      LOGICAL:: propriedadesPvetor(23)  !vetor binário com as propriedades que devem ser gravadas.
       
       INTEGER,ALLOCATABLE:: g(:),&  !vetor com graus de liberdade de um elemento.
                             num(:) ,&  !conectividade de um elemento.
-                            degrees(:,:),&  !associa��o graus de liberdade e elementos.
-                            posicoes(:),conection(:,:),conectionOrdenado(:),&  !vetores auxiliares para constru��o de conec��o entre graus de liberdade.
-                            propVetorEls(:)  !ponteiro os elementos com propriedades armazenadas (em ordem crescente de numera��o).
-      INTEGER(4),ALLOCATABLE:: listaAfinidades(:,:)  !lista de afinidades nodais (8*3,nn), 1a posi��o � um ponteiro.
+                            degrees(:,:),&  !associação graus de liberdade e elementos.
+                            posicoes(:),conection(:,:),conectionOrdenado(:),&  !vetores auxiliares para construção de conecção entre graus de liberdade.
+                            propVetorEls(:)  !ponteiro os elementos com propriedades armazenadas (em ordem crescente de numeração).
+      INTEGER(4),ALLOCATABLE:: listaAfinidades(:,:)  !lista de afinidades nodais (8*3,nn), 1a posição é um ponteiro.
 
-      INTEGER,POINTER:: nf(:,:)  !matriz de graus de liberdade dos n�s.
-                        !g_g(:,:),&  !vetor com os graus de liberdade dos n�s de cada elemento.
+      INTEGER,POINTER:: nf(:,:)  !matriz de graus de liberdade dos nós.
+                        !g_g(:,:),&  !vetor com os graus de liberdade dos nós de cada elemento.
                         !g_num(:,:),&  !conectividade dos elementos.
       REAL(8),ALLOCATABLE::   km(:,:),&  !matriz de rigidez do elemento,
                               km_fluid(:,:),&
-                              g_coord(:,:),&  !coordenadas dos n�s da malha.
-                              coord(:,:),&  !coordenada dos n�s de um elemento.
-                              points(:,:),&  !coordenadas dos pontos de integra��o.
-                              weights(:),&  !peso dos pontos de integra��o.
-                              anisotropia_Ec(:),&  !vetor de anisotropia Ec (=Ec/Ea), onde Ea est� no arquivo .prp.
-                              anisotropia_niac(:)  !vetor de anisotropia niab (=niab/niac), onde niac est� no arquivo .prp.
+                              g_coord(:,:),&  !coordenadas dos nós da malha.
+                              coord(:,:),&  !coordenada dos nós de um elemento.
+                              points(:,:),&  !coordenadas dos pontos de integração.
+                              weights(:),&  !peso dos pontos de integração.
+                              anisotropia_Ec(:),&  !vetor de anisotropia Ec (=Ec/Ea), onde Ea está no arquivo .prp.
+                              anisotropia_niac(:)  !vetor de anisotropia niab (=niab/niac), onde niac está no arquivo .prp.
       INTEGER:: globalPosition
       REAL(8):: value
       
@@ -342,7 +342,7 @@
       
       REAL(8):: Pc,M,kappa,lambda,e0,P0,defVol,evol_vp
       
-      !INICIALIZA��O DE VARI�VEIS.
+      !INICIALIZAÇÃO DE VARIÁVEIS.
       neq = GeomechanicalModel% NumEquations
       element = GeomechanicalModel%element
       nels = GeomechanicalModel%NumElements
@@ -350,8 +350,8 @@
       ndim = GeomechanicalModel%NumDimensions
       nst = GeomechanicalModel%NumTensorComponents
       nip = 8 !GeomechanicalModel%NumIntegrationPoints
-              !Os pontos de integra��o para c�lculo de tens�es e deforma��es
-              !pode ser adotado como igual a 1 pelo usu�rio.
+              !Os pontos de integração para cálculo de tensões e deformações
+              !pode ser adotado como igual a 1 pelo usuário.
       nod = GeomechanicalModel%NumNodesPerElement
       ndof = GeomechanicalModel%NumDOFUperElement
       nthreads = GeomechanicalModel%NumPartitions
@@ -372,9 +372,9 @@
       coord = TRANSPOSE(g_coord(:,num))
       g = GeomechanicalModel%ElementDOFs(:,ElNumber)  !=g_g(:,iel)
         
-      !REMOVENDO A MATRIZ DE RIGIDEZ HOMOG�NEA DO ELEMENTO----------------------
+      !REMOVENDO A MATRIZ DE RIGIDEZ HOMOGÊNEA DO ELEMENTO----------------------
       
-      !Matriz de Rigidez do Elemento Finito s�lido.
+      !Matriz de Rigidez do Elemento Finito sólido.
       IF(GeomechanicalModel%ConstitutiveGeoModel(ElNumber) == 3)THEN
         Pc = GeomechanicalModel%MCCparameters(1,ElNumber)
         M = GeomechanicalModel%MCCparameters(2,ElNumber)
@@ -424,7 +424,7 @@
                 IF(ja(posicao+coluna)==g(j)) EXIT
               END DO
                 
-              !Armazena o valor do dof na posi��o correta.
+              !Armazena o valor do dof na posição correta.
               a(posicao+coluna) = a(posicao+coluna) + km(i,j)
                 
             END IF
@@ -434,17 +434,17 @@
           
       END DO
       
-      !ADICIONANDO MATRIZ ORTROT�PICA-------------------------------------------
-      !   Ea       - M�dulo de Young, no plano de deposi��o ab               !
-      !   Ec       - M�dulo de Young, na dire��o de deposi��o c              !
-      !   niac     - M�dulo de Poisson para deforma��o no plano de deposi��o !
-      !              devido �s tens�es atuantes na dire��o de deposi��o      !
-      !   niab     - M�dulo de Poisson para deforma��o no plano de deposi��o !
-      !              devido �s tens�es atuantes no mesmo plano               !
-      !   sf[DEG]  - �ngulo azimute da estrutura geol�gica planar (strike)   !
-      !              em rela��o ao eixo y (norte) e no sentido hor�rio       !
-      !	df[DEG]	 - �ngulo de inclina��o da estrutura geol�gica planar (dip)  ! 
-      !              em rela��o ao plano horizontal xy e no sentido hor�rio  !
+      !ADICIONANDO MATRIZ ORTROTÓPICA-------------------------------------------
+      !   Ea       - Módulo de Young, no plano de deposição ab               !
+      !   Ec       - Módulo de Young, na direção de deposição c              !
+      !   niac     - Módulo de Poisson para deformação no plano de deposição !
+      !              devido às tensões atuantes na direção de deposição      !
+      !   niab     - Módulo de Poisson para deformação no plano de deposição !
+      !              devido às tensões atuantes no mesmo plano               !
+      !   sf[DEG]  - ângulo azimute da estrutura geológica planar (strike)   !
+      !              em relação ao eixo y (norte) e no sentido horário       !
+      !	df[DEG]	 - ângulo de inclinação da estrutura geológica planar (dip)  ! 
+      !              em relação ao plano horizontal xy e no sentido horário  !
       Ea = Enorm        !normal to fracture plane.
       Ec = E            !tang. to fracture plane.
       niac = poisson
@@ -475,7 +475,7 @@
                 IF(ja(posicao+coluna)==g(j)) EXIT
               END DO
                 
-              !Armazena o valor do dof na posi��o correta.
+              !Armazena o valor do dof na posição correta.
               a(posicao+coluna) = a(posicao+coluna) + km(i,j)
                 
             END IF
@@ -489,7 +489,7 @@
     END SUBROUTINE
     
     !Armazenamento de matriz e ponteiros para os solvers iterativos intel e rotinas BLAS 2/ BLAS 3.
-    !O esquema de armazenamento � o CSR (compressed sparse row).
+    !O esquema de armazenamento é o CSR (compressed sparse row).
     SUBROUTINE SparseStiffnessMatrixCSR( GeomechanicalModel, a, ia, ja )
 
       USE IFPORT
@@ -503,55 +503,55 @@
       
       TYPE(Model),INTENT(IN OUT):: GeomechanicalModel
       REAL(8),ALLOCATABLE,INTENT(IN OUT):: a(:)
-      INTEGER,ALLOCATABLE,INTENT(IN OUT):: ia(:), ja(:)  !Ponteiros que armazenam as posi��es dos dofs na matriz.
+      INTEGER,ALLOCATABLE,INTENT(IN OUT):: ia(:), ja(:)  !Ponteiros que armazenam as posições dos dofs na matriz.
 
-      INTEGER:: neq  !n�mero de equa��es.
+      INTEGER:: neq  !número de equações.
       
-      !VARI�VEIS EST�TICAS.
+      !VARIÁVEIS ESTÁTICAS.
       
       INTEGER:: i,j,k,l,m,iel,&  !contadores.
-                posicao,coluna,&  !aux�lio a localiza��o das posi��es no vetor "a".
-                nPropVetor,&  !n�mero de propriedades gravadas por elemento.
-                no,&  !auxiliar para guardar n�mero do n�.
+                posicao,coluna,&  !auxílio a localização das posições no vetor "a".
+                nPropVetor,&  !número de propriedades gravadas por elemento.
+                no,&  !auxiliar para guardar número do nó.
                 GL1,GL2,GL3  !marcadores de grau de liberdade.
       
-      INTEGER:: nels,&  !n�mero de elementos.
-                nn,&  !n�mero de n�s.
-                ndim,&  !n�mero de dimens�es do problema.
-                nst,&  !n�mero de componentes no tensor de tens�es.
-                nip,&  !n�mero de pontos de integra��o.
-                nod,&  !n�mero de n�s por elemento.
-                ndof !n�mero de graus de liberdade por elemento.
+      INTEGER:: nels,&  !número de elementos.
+                nn,&  !número de nós.
+                ndim,&  !número de dimensões do problema.
+                nst,&  !número de componentes no tensor de tensões.
+                nip,&  !número de pontos de integração.
+                nod,&  !número de nós por elemento.
+                ndof !número de graus de liberdade por elemento.
       
-      INTEGER::nnz  !n�mero de elementos n�o nulos na matriz de rigidez (diagonal + matriz traingular superior).
+      INTEGER::nnz  !número de elementos não nulos na matriz de rigidez (diagonal + matriz traingular superior).
 
-      INTEGER:: nthreads  !n�mero de threads ou n�cleos de processamento que ser�o usados.
+      INTEGER:: nthreads  !número de threads ou núcleos de processamento que serão usados.
       
       REAL(8):: young, poisson
       
       INTEGER:: position, matrixPosition
-      REAL(8)::zero=0.0  !vari�veis do processo do gradientes conjugados.
-      REAL(8)::startTime,endTime  !vari�veis para marca��o de tempo gasto em segundos.
+      REAL(8)::zero=0.0  !variáveis do processo do gradientes conjugados.
+      REAL(8)::startTime,endTime  !variáveis para marcação de tempo gasto em segundos.
       CHARACTER(LEN=320)::element  !tipo de elemento finito ('hexahedron' ou 'tetrahedron').
-      LOGICAL:: propriedadesPvetor(23)  !vetor bin�rio com as propriedades que devem ser gravadas.
+      LOGICAL:: propriedadesPvetor(23)  !vetor binário com as propriedades que devem ser gravadas.
       
       INTEGER,ALLOCATABLE:: g(:),&  !vetor com graus de liberdade de um elemento.
                             num(:) ,&  !conectividade de um elemento.
-                            degrees(:,:),&  !associa��o graus de liberdade e elementos.
-                            posicoes(:),conection(:,:),conectionOrdenado(:),&  !vetores auxiliares para constru��o de conec��o entre graus de liberdade.
-                            propVetorEls(:)  !ponteiro os elementos com propriedades armazenadas (em ordem crescente de numera��o).
-      INTEGER(4),ALLOCATABLE:: listaAfinidades(:,:)  !lista de afinidades nodais (8*3,nn), 1a posi��o � um ponteiro.
+                            degrees(:,:),&  !associação graus de liberdade e elementos.
+                            posicoes(:),conection(:,:),conectionOrdenado(:),&  !vetores auxiliares para construção de conecção entre graus de liberdade.
+                            propVetorEls(:)  !ponteiro os elementos com propriedades armazenadas (em ordem crescente de numeração).
+      INTEGER(4),ALLOCATABLE:: listaAfinidades(:,:)  !lista de afinidades nodais (8*3,nn), 1a posição é um ponteiro.
 
-      INTEGER,POINTER:: nf(:,:)  !matriz de graus de liberdade dos n�s.
-                        !g_g(:,:),&  !vetor com os graus de liberdade dos n�s de cada elemento.
+      INTEGER,POINTER:: nf(:,:)  !matriz de graus de liberdade dos nós.
+                        !g_g(:,:),&  !vetor com os graus de liberdade dos nós de cada elemento.
                         !g_num(:,:),&  !conectividade dos elementos.
       REAL(8),ALLOCATABLE:: km(:,:),&  !matriz de rigidez do elemento,
-                              g_coord(:,:),&  !coordenadas dos n�s da malha.
-                              coord(:,:),&  !coordenada dos n�s de um elemento.
-                              points(:,:),&  !coordenadas dos pontos de integra��o.
-                              weights(:),&  !peso dos pontos de integra��o.
-                              anisotropia_Ec(:),&  !vetor de anisotropia Ec (=Ec/Ea), onde Ea est� no arquivo .prp.
-                              anisotropia_niac(:)  !vetor de anisotropia niab (=niab/niac), onde niac est� no arquivo .prp.
+                              g_coord(:,:),&  !coordenadas dos nós da malha.
+                              coord(:,:),&  !coordenada dos nós de um elemento.
+                              points(:,:),&  !coordenadas dos pontos de integração.
+                              weights(:),&  !peso dos pontos de integração.
+                              anisotropia_Ec(:),&  !vetor de anisotropia Ec (=Ec/Ea), onde Ea está no arquivo .prp.
+                              anisotropia_niac(:)  !vetor de anisotropia niab (=niab/niac), onde niac está no arquivo .prp.
       INTEGER:: globalPosition
       REAL(8):: value
               
@@ -559,7 +559,7 @@
 
       CHARACTER(LEN=8)::HOUR
       
-      !INICIALIZA��O DE VARI�VEIS.
+      !INICIALIZAÇÃO DE VARIÁVEIS.
       element = GeomechanicalModel%element
       nels = GeomechanicalModel%NumElements
       nn = GeomechanicalModel%NumNodes
@@ -575,7 +575,7 @@
       ALLOCATE( nf( SIZE(GeomechanicalModel%NodeDofs(:,1)) , SIZE(GeomechanicalModel%NodeDofs(1,:)) ) )
       nf = GeomechanicalModel%NodeDofs
       
-      !ALOCA��O DE MEM�RIA.
+      !ALOCAÇÃO DE MEMÓRIA.
       ALLOCATE( km(ndof,ndof), g(ndof), num(nod), posicoes(0:neq),&
                 conection(27*3+200,1), conectionOrdenado(27*3+199),&
                 degrees(8,0:neq), points(nip,ndim), weights(nip), coord(nod,ndim),&
@@ -584,7 +584,7 @@
       km = 0.0
       listaAfinidades = 0
       
-      !Marca��o de tempo
+      !Marcação de tempo
       startTime = OMP_get_wtime()
       
       !Montando vetores de armazenamento da matriz de rigidez > a(:),ia(:),ja(:)
@@ -606,9 +606,9 @@
       nnz=0
       DO i=1,nn
         
-        !Marcando os n�s ligados ao n� "i".
+        !Marcando os nós ligados ao nó "i".
         k=0
-        DO j=2,listaAfinidades(1,i)  !looping na lista de afinidades do n� i
+        DO j=2,listaAfinidades(1,i)  !looping na lista de afinidades do nó i
           no = listaAfinidades(j,i)
           
           IF( nf(1,no).NE.0 ) k=k+1
@@ -617,13 +617,13 @@
           
         END DO
         
-        !graus de liberdade do n� i -> "l"
+        !graus de liberdade do nó i -> "l"
         l=0
         IF( nf(1,i).NE.0 ) l=l+1
         IF( nf(2,i).NE.0 ) l=l+1
         IF( nf(3,i).NE.0 ) l=l+1
         
-        !graus de liberdade ligados ao n� = n�mero de graus de liberdade do n� X graus de liberdade dos n�s ligados.
+        !graus de liberdade ligados ao nó = número de graus de liberdade do nó X graus de liberdade dos nós ligados.
         nnz = nnz + l * k
         
       END DO
@@ -636,11 +636,11 @@
       ja = 0
       ia(neq+1) = nnz+1
       
-      !Montando matriz de n�mero de posi��es por grau de liberdade.
-      !Posicoes(i=0:neq) -> marca quantos graus de liberdade possuem afinidade com os graus de liberdade do n� "i".
+      !Montando matriz de número de posições por grau de liberdade.
+      !Posicoes(i=0:neq) -> marca quantos graus de liberdade possuem afinidade com os graus de liberdade do nó "i".
       DO i=1,nn
         
-        k=0  !marca o n�mero de graus de liberdade associados a "k"
+        k=0  !marca o número de graus de liberdade associados a "k"
         DO j=2,listaAfinidades(1,i)
           
           no=listaAfinidades(j,i)
@@ -660,7 +660,7 @@
         
       END DO
       
-      !Acumula posi��es
+      !Acumula posições
       ia(1) = 1
       k=1
       DO i=2,neq
@@ -668,10 +668,10 @@
         ia(i)=k
       END DO
       
-      !Forma��o dos vetores globais ia e ja.
+      !Formação dos vetores globais ia e ja.
       nodes: DO i=1,nn
         
-        !grau de liberdade 1 do n� i.
+        !grau de liberdade 1 do nó i.
       
         DO m=1,3
       
@@ -699,8 +699,8 @@
             k=ia(GL1)
           
             l=-1
-            !DO j=1,(27*3+99)  !dimens�o do array conectionOrdenado(:,1)
-            DO j=1,(27*3+199)  !dimens�o do array conectionOrdenado(:,1)
+            !DO j=1,(27*3+99)  !dimensão do array conectionOrdenado(:,1)
+            DO j=1,(27*3+199)  !dimensão do array conectionOrdenado(:,1)
               IF(conectionOrdenado(j).NE.0)THEN
                 l=l+1
                 coluna=conectionOrdenado(j)
@@ -715,14 +715,14 @@
       END DO nodes
       
 
-      !marca��o de tempo
+      !marcação de tempo
       endTime = OMP_get_wtime()
         
     RETURN
     END SUBROUTINE SparseStiffnessMatrixCSR
     
-    !Subrotina para calcular a matriz de rigidez de um elemento finito 3D hexa�drico de 8 n�s.
-    !Matriz el�stica isotr�pica.
+    !Subrotina para calcular a matriz de rigidez de um elemento finito 3D hexaédrico de 8 nós.
+    !Matriz elástica isotrópica.
     SUBROUTINE ElementoRigidez(ndim,nip,nod,ndof,nst,young,poisson,points,weights,coord,km)
       
       !USE IFPORT
@@ -731,47 +731,47 @@
       
       IMPLICIT NONE
       
-      !VARI�VEIS EST�TICAS.
+      !VARIÁVEIS ESTÁTICAS.
       
       INTEGER::i  !contadores
-      INTEGER,INTENT(IN)::ndim,&  !n�mero de dimens�es do problema
-                          nip,&  !n�mero de pontos de integra��o
-                          nod,&  !n�mero de n�s por elemento
-                          ndof,&  !n�mero de graus de liberdade de deslocamento por elemento
-                          nst  !n�mero de componentes no tensor de tens�es
+      INTEGER,INTENT(IN)::ndim,&  !número de dimensões do problema
+                          nip,&  !número de pontos de integração
+                          nod,&  !número de nós por elemento
+                          ndof,&  !número de graus de liberdade de deslocamento por elemento
+                          nst  !número de componentes no tensor de tensões
       REAL(8)::det                  !determinantee do jacobiano
-      REAL(8),INTENT(IN)::young,&   !m�dulo de young
-                          poisson   !raz�o de poisson
+      REAL(8),INTENT(IN)::young,&   !módulo de young
+                          poisson   !razão de poisson
       
-      !VARI�VEIS DIN�MICAS.
-      REAL(8),ALLOCATABLE:: dee(:,:),&  !matriz de rela��es el�sticas.
-                            bee(:,:),&  !matriz de derivadas das fun��es de forma.
-                            jac(:,:),&  !matriz jacobiana das fun��es de forma.
-                            fun(:),&  !fun��es de forma.
-                            der(:,:),&  !derivadas das fun��es de forma dos deslocamentos em coordenadas naturais.
-                            deriv(:,:)  !derivadas das fun��es de forma dos deslocamentos em coordenadas globais.
-      REAL(8),INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integra��o.
-                          weights(:),&  !peso dos pontos de integra��o.
-                          coord(:,:)  !coordenada dos n�s de um elemento.
+      !VARIÁVEIS DINÂMICAS.
+      REAL(8),ALLOCATABLE:: dee(:,:),&  !matriz de relações elásticas.
+                            bee(:,:),&  !matriz de derivadas das funções de forma.
+                            jac(:,:),&  !matriz jacobiana das funções de forma.
+                            fun(:),&  !funções de forma.
+                            der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais.
+                            deriv(:,:)  !derivadas das funções de forma dos deslocamentos em coordenadas globais.
+      REAL(8),INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integração.
+                          weights(:),&  !peso dos pontos de integração.
+                          coord(:,:)  !coordenada dos nós de um elemento.
       REAL(8),ALLOCATABLE,INTENT(IN OUT)::km(:,:)  !matriz de rigidez do elemento.
       
-      !ALOCA��O DE MEM�RIA.
+      !ALOCAÇÃO DE MEMÓRIA.
       ALLOCATE(dee(nst,nst),bee(nst,ndof),der(ndim,nod),deriv(ndim,nod),fun(nod),jac(ndim,ndim))
       fun=0.0
       
-      !MATRIZ DE RELA��ES EL�STICAS.
+      !MATRIZ DE RELAÇÕES ELÁSTICAS.
       CALL D_elastic_homogenious(dee,young,poisson)
       
-      !INTEGRA��O NUM�RICA DA MATRIZ DE RIGIDEZ.
+      !INTEGRAÇÃO NUMÉRICA DA MATRIZ DE RIGIDEZ.
       km = 0.0
       DO i = 1, nip
         
-        CALL shape_fun(fun,points,i)  !fun��es de forma no ponto de integra��o i
-        CALL shape_der(der,points,i)  !derivada das fun��es de forma
-        jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integra��o i
+        CALL shape_fun(fun,points,i)  !funções de forma no ponto de integração i
+        CALL shape_der(der,points,i)  !derivada das funções de forma
+        jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integração i
         CALL determinante(jac,det)  !determinante do jacobiano
         CALL invert(jac)  !inverso do jacobiano
-        deriv=MATMUL(jac,der)  !derivadas das fun��es de forma em coordenadas reais
+        deriv=MATMUL(jac,der)  !derivadas das funções de forma em coordenadas reais
         CALL beemat(bee,deriv)  !Matriz de derivadas B
         
         km=km+MATMUL(MATMUL(TRANSPOSE(bee),dee),bee)*det*weights(i)  !km=km+BT*D*B*det(J)*peso
@@ -789,49 +789,49 @@
       
       IMPLICIT NONE
       
-      !VARI�VEIS EST�TICAS.
+      !VARIÁVEIS ESTÁTICAS.
       
       INTEGER::i  !contadores
-      INTEGER,INTENT(IN)::ndim,&  !n�mero de dimens�es do problema
-                          nip,&  !n�mero de pontos de integra��o
-                          nod,&  !n�mero de n�s por elemento
-                          ndof,&  !n�mero de graus de liberdade de deslocamento por elemento
-                          nst  !n�mero de componentes no tensor de tens�es
+      INTEGER,INTENT(IN)::ndim,&  !número de dimensões do problema
+                          nip,&  !número de pontos de integração
+                          nod,&  !número de nós por elemento
+                          ndof,&  !número de graus de liberdade de deslocamento por elemento
+                          nst  !número de componentes no tensor de tensões
       REAL(8)::det                  !determinantee do jacobiano
       
       TYPE(TransverseIsotroplicElasticity):: TransverIsotropicProps
       
-      !VARI�VEIS DIN�MICAS.
-      REAL(8),ALLOCATABLE:: dee(:,:),&  !matriz de rela��es el�sticas.
-                            bee(:,:),&  !matriz de derivadas das fun��es de forma.
-                            jac(:,:),&  !matriz jacobiana das fun��es de forma.
-                            fun(:),&  !fun��es de forma.
-                            der(:,:),&  !derivadas das fun��es de forma dos deslocamentos em coordenadas naturais.
-                            deriv(:,:)  !derivadas das fun��es de forma dos deslocamentos em coordenadas globais.
-      REAL(8),INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integra��o.
-                          weights(:),&  !peso dos pontos de integra��o.
-                          coord(:,:)  !coordenada dos n�s de um elemento.
+      !VARIÁVEIS DINÂMICAS.
+      REAL(8),ALLOCATABLE:: dee(:,:),&  !matriz de relações elásticas.
+                            bee(:,:),&  !matriz de derivadas das funções de forma.
+                            jac(:,:),&  !matriz jacobiana das funções de forma.
+                            fun(:),&  !funções de forma.
+                            der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais.
+                            deriv(:,:)  !derivadas das funções de forma dos deslocamentos em coordenadas globais.
+      REAL(8),INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integração.
+                          weights(:),&  !peso dos pontos de integração.
+                          coord(:,:)  !coordenada dos nós de um elemento.
       REAL(8),ALLOCATABLE,INTENT(IN OUT)::km(:,:)  !matriz de rigidez do elemento.
       
-      !ALOCA��O DE MEM�RIA.
+      !ALOCAÇÃO DE MEMÓRIA.
       ALLOCATE(dee(nst,nst),bee(nst,ndof),der(ndim,nod),deriv(ndim,nod),fun(nod),jac(ndim,ndim))
       fun=0.0
       
-      !MATRIZ DE RELA��ES EL�STICAS.
+      !MATRIZ DE RELAÇÕES ELÁSTICAS.
       !CALL D_elastic_homogenious(dee,young,poisson)
       dee = D_TransverseIsotropic(TransverIsotropicProps%E1,TransverIsotropicProps%E2,&
           TransverIsotropicProps%N1,TransverIsotropicProps%N2,TransverIsotropicProps%STRIKE,TransverIsotropicProps%DIP)
       
-      !INTEGRA��O NUM�RICA DA MATRIZ DE RIGIDEZ.
+      !INTEGRAÇÃO NUMÉRICA DA MATRIZ DE RIGIDEZ.
       km = 0.0
       DO i = 1, nip
         
-        CALL shape_fun(fun,points,i)  !fun��es de forma no ponto de integra��o i
-        CALL shape_der(der,points,i)  !derivada das fun��es de forma
-        jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integra��o i
+        CALL shape_fun(fun,points,i)  !funções de forma no ponto de integração i
+        CALL shape_der(der,points,i)  !derivada das funções de forma
+        jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integração i
         CALL determinante(jac,det)  !determinante do jacobiano
         CALL invert(jac)  !inverso do jacobiano
-        deriv=MATMUL(jac,der)  !derivadas das fun��es de forma em coordenadas reais
+        deriv=MATMUL(jac,der)  !derivadas das funções de forma em coordenadas reais
         CALL beemat(bee,deriv)  !Matriz de derivadas B
         
         km=km+MATMUL(MATMUL(TRANSPOSE(bee),dee),bee)*det*weights(i)  !km=km+BT*D*B*det(J)*peso
@@ -841,8 +841,8 @@
       RETURN
     END SUBROUTINE
     
-    !Subrotina para calcular a matriz de rigidez de um elemento finito 3D hexa�drico de 8 n�s.
-    !Matriz de el�stica ortotr�pila.
+    !Subrotina para calcular a matriz de rigidez de um elemento finito 3D hexaédrico de 8 nós.
+    !Matriz de elástica ortotrópila.
     SUBROUTINE ElementoRigidezOrtotropico(ndim,nip,nod,ndof,nst,Ea,Ec,niac,niab,sf_gr,df_gr,points,weights,coord,km)
       
       !USE IFPORT
@@ -851,49 +851,49 @@
       
       IMPLICIT NONE
       
-      !VARI�VEIS EST�TICAS.
+      !VARIÁVEIS ESTÁTICAS.
       INTEGER::i  !contadores
-      INTEGER,INTENT(IN)::ndim,&  !n�mero de dimens�es do problema
-                          nip,&  !n�mero de pontos de integra��o
-                          nod,&  !n�mero de n�s por elemento
-                          ndof,&  !n�mero de graus de liberdade de deslocamento por elemento
-                          nst  !n�mero de componentes no tensor de tens�es
+      INTEGER,INTENT(IN)::ndim,&  !número de dimensões do problema
+                          nip,&  !número de pontos de integração
+                          nod,&  !número de nós por elemento
+                          ndof,&  !número de graus de liberdade de deslocamento por elemento
+                          nst  !número de componentes no tensor de tensões
       REAL(8)::det  !determinantee do jacobiano
-      REAL(8),INTENT(IN)::Ea,&  !m�dulo de Young, no plano de deposi��o ab  
-                            Ec,&  !m�dulo de Young, na dire��o de deposi��o c
-                            niac,&  !m�dulo de Poisson para deforma��o no plano de deposi��o
-                                    !devido �s tens�es atuantes na dire��o de deposi��o 
-                            niab,&  !m�dulo de Poisson para deforma��o no plano de deposi��o
-                                    !devido �s tens�es atuantes no mesmo plano
-                            sf_gr,&  !�ngulo (graus) azimute da estrutura geol�gica planar (strike)
-                                      !em rela��o ao eixo y (norte) e no sentido hor�rio
-                            df_gr  !�ngulo (graus) de inclina��o da estrutura geol�gica planar (dip)
-                                    !em rela��o ao plano horizontal xy e no sentido hor�rio 
-      !VARI�VEIS DIN�MICAS.
-      REAL(8),ALLOCATABLE::dee(:,:),&  !matriz de rela��es el�sticas
-                              bee(:,:),&  !matriz de derivadas das fun��es de forma
-                              jac(:,:),&  !matriz jacobiana das fun��es de forma
-                              fun(:),&  !fun��es de forma
-                              der(:,:),&  !derivadas das fun��es de forma dos deslocamentos em coordenadas naturais
-                              deriv(:,:)  !derivadas das fun��es de forma dos deslocamentos em coordenadas globais
-      REAL(8),ALLOCATABLE,INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integra��o
-                                        weights(:),&  !peso dos pontos de integra��o
-                                        coord(:,:)  !coordenada dos n�s de um elemento
+      REAL(8),INTENT(IN)::Ea,&  !módulo de Young, no plano de deposição ab  
+                            Ec,&  !módulo de Young, na direção de deposição c
+                            niac,&  !módulo de Poisson para deformação no plano de deposição
+                                    !devido às tensões atuantes na direção de deposição 
+                            niab,&  !módulo de Poisson para deformação no plano de deposição
+                                    !devido às tensões atuantes no mesmo plano
+                            sf_gr,&  !ângulo (graus) azimute da estrutura geológica planar (strike)
+                                      !em relação ao eixo y (norte) e no sentido horário
+                            df_gr  !ângulo (graus) de inclinação da estrutura geológica planar (dip)
+                                    !em relação ao plano horizontal xy e no sentido horário 
+      !VARIÁVEIS DINÂMICAS.
+      REAL(8),ALLOCATABLE::dee(:,:),&  !matriz de relações elásticas
+                              bee(:,:),&  !matriz de derivadas das funções de forma
+                              jac(:,:),&  !matriz jacobiana das funções de forma
+                              fun(:),&  !funções de forma
+                              der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais
+                              deriv(:,:)  !derivadas das funções de forma dos deslocamentos em coordenadas globais
+      REAL(8),ALLOCATABLE,INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integração
+                                        weights(:),&  !peso dos pontos de integração
+                                        coord(:,:)  !coordenada dos nós de um elemento
       REAL(8),ALLOCATABLE,INTENT(IN OUT)::km(:,:)  !matriz de rigidez do elemento
-      !aloca��o de mem�ria
+      !alocação de memória
       ALLOCATE(dee(nst,nst),bee(nst,ndof),der(ndim,nod),deriv(ndim,nod),fun(nod),jac(ndim,ndim))
       fun=0.0
-      !matriz de rela��es el�sticas
+      !matriz de relações elásticas
       CALL D_HomogeneousElasticMatrixTransvIso_PUCtecgraf(Ea,Ec,niac,niab,sf_gr,df_gr,dee)
-      !integra��o num�rica da matriz de rigidez
+      !integração numérica da matriz de rigidez
       km=0.0
       DO i=1,nip
-        CALL shape_fun(fun,points,i)  !fun��es de forma no ponto de integra��o i
-        CALL shape_der(der,points,i)  !derivada das fun��es de forma
-        jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integra��o i
+        CALL shape_fun(fun,points,i)  !funções de forma no ponto de integração i
+        CALL shape_der(der,points,i)  !derivada das funções de forma
+        jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integração i
         CALL determinante(jac,det)  !determinante do jacobiano
         CALL invert(jac)  !inverso do jacobiano
-        deriv=MATMUL(jac,der)  !derivadas das fun��es de forma em coordenadas reais
+        deriv=MATMUL(jac,der)  !derivadas das funções de forma em coordenadas reais
         CALL beemat(bee,deriv)  !Matriz de derivadas B
         !
         km=km+MATMUL(MATMUL(TRANSPOSE(bee),dee),bee)*det*weights(i)  !km=km+BT*D*B*det(J)*peso
@@ -903,8 +903,8 @@
       RETURN
     END SUBROUTINE ElementoRigidezOrtotropico
 
-    !Subrotina para calcular a matriz de rigidez de um elemento finito 3D hexa�drico de 8 n�s.
-    !Matriz el�stica de um fluido.
+    !Subrotina para calcular a matriz de rigidez de um elemento finito 3D hexaédrico de 8 nós.
+    !Matriz elástica de um fluido.
     SUBROUTINE ElementFluidStiffness(ndim,nip,nod,ndof,nst,Kf,points,weights,coord,km)
       
       !USE IFPORT
@@ -913,47 +913,47 @@
       
       IMPLICIT NONE
       
-      !VARI�VEIS EST�TICAS.
+      !VARIÁVEIS ESTÁTICAS.
       
       INTEGER::i  !contadores
-      INTEGER,INTENT(IN)::ndim,&  !n�mero de dimens�es do problema
-                          nip,&  !n�mero de pontos de integra��o
-                          nod,&  !n�mero de n�s por elemento
-                          ndof,&  !n�mero de graus de liberdade de deslocamento por elemento
-                          nst  !n�mero de componentes no tensor de tens�es
+      INTEGER,INTENT(IN)::ndim,&  !número de dimensões do problema
+                          nip,&  !número de pontos de integração
+                          nod,&  !número de nós por elemento
+                          ndof,&  !número de graus de liberdade de deslocamento por elemento
+                          nst  !número de componentes no tensor de tensões
       REAL(8)::det  !determinantee do jacobiano
       REAL(8),INTENT(IN)::Kf  !fluid bulk modulus.
       
-      !VARI�VEIS DIN�MICAS.
-      REAL(8),ALLOCATABLE:: dee(:,:),&  !matriz de rela��es el�sticas.
-                              bee(:,:),&  !matriz de derivadas das fun��es de forma.
-                              jac(:,:),&  !matriz jacobiana das fun��es de forma.
-                              fun(:),&  !fun��es de forma.
-                              der(:,:),&  !derivadas das fun��es de forma dos deslocamentos em coordenadas naturais.
-                              deriv(:,:)  !derivadas das fun��es de forma dos deslocamentos em coordenadas globais.
-      REAL(8),ALLOCATABLE,INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integra��o.
-                                        weights(:),&  !peso dos pontos de integra��o.
-                                        coord(:,:)  !coordenada dos n�s de um elemento.
+      !VARIÁVEIS DINÂMICAS.
+      REAL(8),ALLOCATABLE:: dee(:,:),&  !matriz de relações elásticas.
+                              bee(:,:),&  !matriz de derivadas das funções de forma.
+                              jac(:,:),&  !matriz jacobiana das funções de forma.
+                              fun(:),&  !funções de forma.
+                              der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais.
+                              deriv(:,:)  !derivadas das funções de forma dos deslocamentos em coordenadas globais.
+      REAL(8),ALLOCATABLE,INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integração.
+                                        weights(:),&  !peso dos pontos de integração.
+                                        coord(:,:)  !coordenada dos nós de um elemento.
       REAL(8),ALLOCATABLE,INTENT(IN OUT)::km(:,:)  !matriz de rigidez do elemento.
       
-      !ALOCA��O DE MEM�RIA.
+      !ALOCAÇÃO DE MEMÓRIA.
       ALLOCATE(dee(nst,nst),bee(nst,ndof),der(ndim,nod),deriv(ndim,nod),fun(nod),jac(ndim,ndim))
       fun=0.0
       
-      !MATRIZ DE RELA��ES EL�STICAS.
+      !MATRIZ DE RELAÇÕES ELÁSTICAS.
       dee = 0.0
       dee(1:3,1:3) = Kf
       
-      !INTEGRA��O NUM�RICA DA MATRIZ DE RIGIDEZ.
+      !INTEGRAÇÃO NUMÉRICA DA MATRIZ DE RIGIDEZ.
       km = 0.0
       DO i = 1, nip
         
-        CALL shape_fun(fun,points,i)  !fun��es de forma no ponto de integra��o i
-        CALL shape_der(der,points,i)  !derivada das fun��es de forma
-        jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integra��o i
+        CALL shape_fun(fun,points,i)  !funções de forma no ponto de integração i
+        CALL shape_der(der,points,i)  !derivada das funções de forma
+        jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integração i
         CALL determinante(jac,det)  !determinante do jacobiano
         CALL invert(jac)  !inverso do jacobiano
-        deriv=MATMUL(jac,der)  !derivadas das fun��es de forma em coordenadas reais
+        deriv=MATMUL(jac,der)  !derivadas das funções de forma em coordenadas reais
         CALL beemat(bee,deriv)  !Matriz de derivadas B
         
         km=km+MATMUL(MATMUL(TRANSPOSE(bee),dee),bee)*det*weights(i)  !km=km+BT*D*B*det(J)*peso
@@ -963,7 +963,7 @@
       RETURN
     END SUBROUTINE ElementFluidStiffness
     
-    !!Rotina para adicionar elements � matriz de rigidez.
+    !!Rotina para adicionar elements à matriz de rigidez.
     !SUBROUTINE AddHomogeniousElementStiffness( GeomechanicalModel,coord,g,points,weights,young,poisson,a,ia,ja )
     !  
     !  USE IFPORT
@@ -977,43 +977,43 @@
     !  
     !  TYPE(Model),INTENT(IN):: GeomechanicalModel
     !  REAL(8),INTENT(IN OUT):: a(:)
-    !  INTEGER,INTENT(IN):: ia(:), ja(:)  !Ponteiros que armazenam as posi��es dos dofs na matriz.
+    !  INTEGER,INTENT(IN):: ia(:), ja(:)  !Ponteiros que armazenam as posições dos dofs na matriz.
     !  REAL(8),INTENT(IN):: young, poisson
     !  INTEGER,INTENT(IN):: g(:)           !vetor com graus de liberdade de um elemento.
-    !  REAL(8),INTENT(IN):: coord(:,:),&   !coordenada dos n�s de um elemento.
-    !                       points(:,:),&  !coordenadas dos pontos de integra��o.
-    !                       weights(:)     !peso dos pontos de integra��o
+    !  REAL(8),INTENT(IN):: coord(:,:),&   !coordenada dos nós de um elemento.
+    !                       points(:,:),&  !coordenadas dos pontos de integração.
+    !                       weights(:)     !peso dos pontos de integração
     !  
-    !  !VARI�VEIS EST�TICAS.
+    !  !VARIÁVEIS ESTÁTICAS.
     !  INTEGER:: i,j,k,l,m,iel,&  !contadores.
-    !            posicao,coluna,&  !aux�lio a localiza��o das posi��es no vetor "a".
-    !            nPropVetor,&  !n�mero de propriedades gravadas por elemento.
-    !            no,&  !auxiliar para guardar n�mero do n�.
+    !            posicao,coluna,&  !auxílio a localização das posições no vetor "a".
+    !            nPropVetor,&  !número de propriedades gravadas por elemento.
+    !            no,&  !auxiliar para guardar número do nó.
     !            GL1,GL2,GL3  !marcadores de grau de liberdade.
     !  
-    !  INTEGER:: nels,&  !n�mero de elementos.
-    !            nn,&  !n�mero de n�s.
-    !            ndim,&  !n�mero de dimens�es do problema.
-    !            nst,&  !n�mero de componentes no tensor de tens�es.
-    !            nip,&  !n�mero de pontos de integra��o.
-    !            nod,&  !n�mero de n�s por elemento.
-    !            ndof !n�mero de graus de liberdade por elemento.
+    !  INTEGER:: nels,&  !número de elementos.
+    !            nn,&  !número de nós.
+    !            ndim,&  !número de dimensões do problema.
+    !            nst,&  !número de componentes no tensor de tensões.
+    !            nip,&  !número de pontos de integração.
+    !            nod,&  !número de nós por elemento.
+    !            ndof !número de graus de liberdade por elemento.
     !  
-    !  INTEGER:: nnz  !n�mero de elementos n�o nulos na matriz de rigidez (diagonal + matriz traingular superior).
-    !  INTEGER:: neq  !n�mero de equa��es.
+    !  INTEGER:: nnz  !número de elementos não nulos na matriz de rigidez (diagonal + matriz traingular superior).
+    !  INTEGER:: neq  !número de equações.
     !
     !  INTEGER:: position, matrixPosition
-    !  REAL(8)::zero=0.0  !vari�veis do processo do gradientes conjugados.
+    !  REAL(8)::zero=0.0  !variáveis do processo do gradientes conjugados.
     !  
     !  CHARACTER(LEN=320)::element  !tipo de elemento finito ('hexahedron' ou 'tetrahedron').
     !  
-    !  INTEGER,POINTER:: nf(:,:)  !matriz de graus de liberdade dos n�s.
+    !  INTEGER,POINTER:: nf(:,:)  !matriz de graus de liberdade dos nós.
     !  REAL(8),ALLOCATABLE:: km(:,:)  !matriz de rigidez do elemento.
     !  
     !  INTEGER:: globalPosition
     !  REAL(8):: value
     !  
-    !  !INICIALIZA��O DE VARI�VEIS.
+    !  !INICIALIZAÇÃO DE VARIÁVEIS.
     !  neq = GeomechanicalModel% NumEquations
     !  element = GeomechanicalModel%element
     !  nels = GeomechanicalModel%NumElements
@@ -1021,14 +1021,14 @@
     !  ndim = GeomechanicalModel%NumDimensions
     !  nst = GeomechanicalModel%NumTensorComponents
     !  nip = 8 !GeomechanicalModel%NumIntegrationPoints
-    !          !Os pontos de integra��o para c�lculo de tens�es e deforma��es
-    !          !pode ser adotado como igual a 1 pelo usu�rio.
+    !          !Os pontos de integração para cálculo de tensões e deformações
+    !          !pode ser adotado como igual a 1 pelo usuário.
     !  nod = GeomechanicalModel%NumNodesPerElement
     !  ndof = GeomechanicalModel%NumDOFUperElement
     !  
     !  ALLOCATE( km(ndof,ndof) )
     !
-    !  !Matriz de Rigidez do Elemento Finito s�lido.
+    !  !Matriz de Rigidez do Elemento Finito sólido.
     !  CALL ElementoRigidez( ndim,nip,nod,ndof,nst,young,poisson,&
     !                        points,weights,coord,km)
     !    
@@ -1049,7 +1049,7 @@
     !            IF(ja(posicao+coluna)==g(j)) EXIT
     !          END DO
     !            
-    !          !Armazena o valor do dof na posi��o correta.
+    !          !Armazena o valor do dof na posição correta.
     !          a(posicao+coluna) = a(posicao+coluna) + km(i,j)
     !            
     !        END IF
@@ -1064,8 +1064,8 @@
     !END SUBROUTINE
     !
             
-    !Subrotina para adicionar n�mero a uma lista de conectividade.
-    !1a posica de cada vetor da lista (lista(1,posicao)) - cont�m a posicao do �ltimo elemento preenchido do vetor
+    !Subrotina para adicionar número a uma lista de conectividade.
+    !1a posica de cada vetor da lista (lista(1,posicao)) - contém a posicao do último elemento preenchido do vetor
     SUBROUTINE ListaAd(lista,valor,posicao)
 
       IMPLICIT NONE
@@ -1083,7 +1083,7 @@
         IF(lista(j,posicao)==valor) existe=.TRUE.
       END DO
       
-      !Adiciona � lista se o element ainda n�o existe.
+      !Adiciona à lista se o element ainda não existe.
       IF(existe.EQV..FALSE.)THEN
         lista(i+1,posicao)=valor
         lista(1,posicao)=i+1

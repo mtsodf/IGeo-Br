@@ -2,7 +2,7 @@
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
-  !Programa de Pos-graduação em Geotecnia.
+  !Programa de Pos-graduaÃ§Ã£o em Geotecnia.
   !University of Brasilia
 
 
@@ -36,7 +36,7 @@
       nip = GeomechanicalModel%NumIntegrationPoints
       
       !Liquefaction.
-      IF(SIZE(GeomechanicalModel%Liquefaction)>0)THEN
+      IF(ALLOCATED(GeomechanicalModel%Liquefaction))THEN
         
         DO i=1,SIZE(GeomechanicalModel%Liquefaction)
           

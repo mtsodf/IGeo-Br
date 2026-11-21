@@ -30,44 +30,44 @@
       INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
       INTEGER:: iel,i,j  !contadores.
 
-      INTEGER:: ndim,&  !dimensıes do problema
-                nst,&  !n˙mero de componentes no tensor de tensıes
-                nn,&  !n˙mero de nÛs
-                nels,&  !n˙mero de elementos
-                nip,&  !n˙mero de pontos de integraÁ„o
-                nod,&  !n˙mero de nÛs por elemento
-                ndof,&  !n˙mero de graus de liberdade de deslocamento por elemento
-                nodf,&  !n˙mero de nÛs com grau de liberdade de poro-press„o.
-                nthreads  !n˙mero de threads ou n˙cleos de processamento que ser„o usados
+      INTEGER:: ndim,&  !dimensões do problema
+                nst,&  !número de componentes no tensor de tensões
+                nn,&  !número de nós
+                nels,&  !número de elementos
+                nip,&  !número de pontos de integração
+                nod,&  !número de nós por elemento
+                ndof,&  !número de graus de liberdade de deslocamento por elemento
+                nodf,&  !número de nós com grau de liberdade de poro-pressão.
+                nthreads  !número de threads ou núcleos de processamento que serão usados
       REAL(iwp):: zero=0.0_iwp,&
                   det,&  !MatrixDeterminant do jacobiano
                   biot,&  !coeficiente de Biot.
                   NTG  !net-to-gross.
       CHARACTER(LEN=320)::element
 
-      !VARI¡VEIS DIN¬MICAS
+      !VARIÁVEIS DINÂMICAS
       INTEGER,ALLOCATABLE::num(:) ,&  !conectividade de um elemento.
           g(:)  !vetor com os graus de liberdade de cada elemento.
-      REAL(iwp),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integraÁ„o
-                              weights(:),&  !peso dos pontos de integraÁ„o
-                              coord(:,:),&  !coordenada dos nÛs de um elemento
-                              fun(:),&  !funÁıes de forma
-                              der(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas naturais
-                              deriv(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas globais
-                              jac(:,:),&  !matriz jacobiana das funÁıes de forma
-                              g_coord(:,:),&  !coordenada dos nÛs da malha
-                              bee(:,:),&  !matriz de derivadas das funÁıes de forma
-                              dee(:,:),&  !matriz de relaÁıes el·sticas
-                              pp(:),&  !poro-pressıes nodais em um elemenro
-                              porolo(:),&  !carga de poro-press„o em um elemento
-                              coupl(:,:),&  !matriz de acoplamento poro-el·stica de um elemento
-                              funf(:),&  !funÁıes de forma de poro-press„o
-                              derivf(:,:),&  !derivada das funÁıes de forma de funf em coordenadas locais
-                              derf(:,:),& !derivada das funÁıes de forma de funf em coordenadas globais
-                              volf(:,:),&  !relacionado ‡s deformaÁıes volumÈtricas
-                              vol(:)   !,&  !derivadas correpondentes ‡s deformaÁıes volumÈtricas
+      REAL(iwp),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integração
+                              weights(:),&  !peso dos pontos de integração
+                              coord(:,:),&  !coordenada dos nós de um elemento
+                              fun(:),&  !funções de forma
+                              der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais
+                              deriv(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas globais
+                              jac(:,:),&  !matriz jacobiana das funções de forma
+                              g_coord(:,:),&  !coordenada dos nós da malha
+                              bee(:,:),&  !matriz de derivadas das funções de forma
+                              dee(:,:),&  !matriz de relações elásticas
+                              pp(:),&  !poro-pressões nodais em um elemenro
+                              porolo(:),&  !carga de poro-pressão em um elemento
+                              coupl(:,:),&  !matriz de acoplamento poro-elástica de um elemento
+                              funf(:),&  !funções de forma de poro-pressão
+                              derivf(:,:),&  !derivada das funções de forma de funf em coordenadas locais
+                              derf(:,:),& !derivada das funções de forma de funf em coordenadas globais
+                              volf(:,:),&  !relacionado às deformações volumétricas
+                              vol(:)   !,&  !derivadas correpondentes às deformações volumétricas
                               !propVetor(:,:),&  !vetor com as propriedades armazenadas (nPropVetor,nelsProp)
-                              !propVetorPres(:,:)  !vetor para armazenamento da press„o de fluido (nels,prop)
+                              !propVetorPres(:,:)  !vetor para armazenamento da pressão de fluido (nels,prop)
 
       element = GeomechanicalModel%element
       nels = GeomechanicalModel%NumElements

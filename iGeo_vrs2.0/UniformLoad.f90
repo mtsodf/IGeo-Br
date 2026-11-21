@@ -31,17 +31,17 @@
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER:: iel,index1,index2,index3  !contadores.
 
-        INTEGER::ndim,&  !dimensıes do problema
-            nn,&  !n˙mero de nÛs
-            nod,&  !n˙mero de nÛs por elemento
-            ndof     !n˙mero de graus de liberdade de deslocamento por elemento.
+        INTEGER::ndim,&  !dimensões do problema
+            nn,&  !número de nós
+            nod,&  !número de nós por elemento
+            ndof     !número de graus de liberdade de deslocamento por elemento.
         REAL(8)::f(3),& !force vector.
             area,n(3),coordsTRI(3,3),area1,area2,normal(3)
 
         INTEGER,ALLOCATABLE::num(:),&  !conectividade de um elemento.
             nodeDOFs(:)  !vetor com os graus de liberdade de cada elemento.
-        REAL(iwp),ALLOCATABLE::coord(:,:),&  !coordenada dos nÛs de um elemento
-            g_coord(:,:)  !coordenada dos nÛs da malha
+        REAL(iwp),ALLOCATABLE::coord(:,:),&  !coordenada dos nós de um elemento
+            g_coord(:,:)  !coordenada dos nós da malha
 
         nn = GeomechanicalModel%NumNodes
         ndim = GeomechanicalModel%NumDimensions

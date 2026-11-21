@@ -2,7 +2,7 @@
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
-  !Programa de Pos-graduaÁ„o em Geotecnia.
+  !Programa de Pos-gradua√ß√£o em Geotecnia.
   !University of Brasilia
 
 
@@ -26,46 +26,46 @@
       REAL(8),INTENT(IN):: Temperature(:)            !Nodal Porepressure.
       REAL(8),INTENT(IN OUT):: Load(0:)
     
-      !VARI¡VEIS EST¡TICAS
+      !VARI√ÅVEIS EST√ÅTICAS
       INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
       INTEGER::iel,i,k,&  !contadores
                nlen  !comprimento de palavras
-      INTEGER:: ndim,&  !dimensıes do problema
-                nst,&  !n˙mero de componentes no tensor de tensıes
-                nn,&  !n˙mero de nÛs
-                nels,&  !n˙mero de elementos
-                nip,&  !n˙mero de pontos de integraÁ„o
-                nod,&  !n˙mero de nÛs por elemento
-                ndof,&  !n˙mero de graus de liberdade de deslocamento por elemento
-                iy  !est·gio de carregamento
+      INTEGER:: ndim,&  !dimens√µes do problema
+                nst,&  !n√∫mero de componentes no tensor de tens√µes
+                nn,&  !n√∫mero de n√≥s
+                nels,&  !n√∫mero de elementos
+                nip,&  !n√∫mero de pontos de integra√ß√£o
+                nod,&  !n√∫mero de n√≥s por elemento
+                ndof,&  !n√∫mero de graus de liberdade de deslocamento por elemento
+                iy  !est√°gio de carregamento
       REAL(iwp)::zero=0.0_iwp,one=1.0_iwp,&
                  det,&  !determinantee do jacobiano
                  prop(23),&  !vetor para leitura de propriedades do elemento do arquivo .prp
-                 DeltaT,&  !variaÁ„o de temperatura
-                 propDin(8),&  !propriedades din‚micas
+                 DeltaT,&  !varia√ß√£o de temperatura
+                 propDin(8),&  !propriedades din√¢micas
                  Temp0,TempF,&  !temperaturas inicial e final
                  NTG,&  !net-to-gross
-                 alfa,&  !coeficiente de dilataÁ„o tÈrmica linear
+                 alfa,&  !coeficiente de dilata√ß√£o t√©rmica linear
                  e,v,&
                  temp
   
-      !VARI¡VEIS DIN¬MICAS
+      !VARI√ÅVEIS DIN√ÇMICAS
   	  INTEGER,ALLOCATABLE::num(:) ,&  !conectividade de um elemento
   	                       g(:)  !vetor com os graus de liberdade de cada elemento
   	  INTEGER,ALLOCATABLE::g_num(:,:),&  !conectividade dos elementos
-  	                       g_g(:,:)  !matriz para identificaÁ„o dos graus de liberdades dos nÛs
-      REAL(iwp),ALLOCATABLE::points(:,:),&  !coordenadas dos pontos de integraÁ„o
-                             weights(:),&  !peso dos pontos de integraÁ„o
-                             coord(:,:),&  !coordenada dos nÛs de um elemento
-                             fun(:),&  !funÁıes de forma
-                             der(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas naturais
-                             deriv(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas globais
-                             jac(:,:),&  !matriz jacobiana das funÁıes de forma
-                             g_coord(:,:),&  !coordenada dos nÛs da malha
-                             bee(:,:),&  !matriz de derivadas das funÁıes de forma
-                             dee(:,:),&  !matriz de relaÁıes el·sticas
-                             eterm(:),&  !deformaÁ„o tÈrmica
-                             termlo(:)  !carga tÈrmica em um elemento
+  	                       g_g(:,:)  !matriz para identifica√ß√£o dos graus de liberdades dos n√≥s
+      REAL(iwp),ALLOCATABLE::points(:,:),&  !coordenadas dos pontos de integra√ß√£o
+                             weights(:),&  !peso dos pontos de integra√ß√£o
+                             coord(:,:),&  !coordenada dos n√≥s de um elemento
+                             fun(:),&  !fun√ß√µes de forma
+                             der(:,:),&  !derivadas das fun√ß√µes de forma dos deslocamentos em coordenadas naturais
+                             deriv(:,:),&  !derivadas das fun√ß√µes de forma dos deslocamentos em coordenadas globais
+                             jac(:,:),&  !matriz jacobiana das fun√ß√µes de forma
+                             g_coord(:,:),&  !coordenada dos n√≥s da malha
+                             bee(:,:),&  !matriz de derivadas das fun√ß√µes de forma
+                             dee(:,:),&  !matriz de rela√ß√µes el√°sticas
+                             eterm(:),&  !deforma√ß√£o t√©rmica
+                             termlo(:)  !carga t√©rmica em um elemento
       CHARACTER(LEN=320)::element
     
       element = GeomechanicalModel%element
@@ -77,7 +77,7 @@
       nod = GeomechanicalModel%NumNodesPerElement
       ndof = GeomechanicalModel%NumDOFUperElement
       
-      !ALOCA«√O DE MEM”RIA
+      !ALOCA√á√ÉO DE MEM√ìRIA
       ALLOCATE(num(nod),g(ndof),points(nip,ndim),weights(nip),bee(nst,ndof),dee(nst,nst),&
                coord(nod,ndim),der(ndim,nod),deriv(ndim,nod),fun(nod),jac(ndim,ndim),&
                g_coord(ndim,nn),termlo(ndof),eterm(nst))
@@ -91,21 +91,21 @@
       !LOOPING NOS ELEMENTOS PARA CALCULAR VETOR DE CARGAS ESTRUTURAIS
       CALL sample(element,points,weights)
       
-      !calculo do acrÈscimo de temperatura
+      !calculo do acr√©scimo de temperatura
       DO iel=1,nels
           
         num = GeomechanicalModel%ElementNodes(:,iel)  !g_num(:,iel)
           
         DeltaT = SUM(Temperature(num))/8.0
         
-        !calculo carga nodal de poropress„o se houver excesso de poro-press„o
-      	IF(ABS(DeltaT).GT.(0.01))THEN  !sÛ entra no looping se a variaÁ„o de temperatura for maior que 0.01oC
-      	                                !essa toler‚ncia evita erros de arredondamento em precis„o dupla.
+        !calculo carga nodal de poropress√£o se houver excesso de poro-press√£o
+      	IF(ABS(DeltaT).GT.(0.01))THEN  !s√≥ entra no looping se a varia√ß√£o de temperatura for maior que 0.01oC
+      	                                !essa toler√¢ncia evita erros de arredondamento em precis√£o dupla.
                         
           coord = TRANSPOSE(g_coord(:,num))
           g = GeomechanicalModel%ElementDOFs(:,iel)     !g_g(:,iel)
           
-      	  !c·lculo da matriz el·stica [D]
+      	  !c√°lculo da matriz el√°stica [D]
           !e = GeomechanicalModel%YoungMod(iel) * (1.0-GeomechanicalModel%DamageStiffness(iel))
           !v = GeomechanicalModel%Poisson(iel)
           e = 0.5 * (GeomechanicalModel%TransverIsotropicProps(iel)%E1 + GeomechanicalModel%TransverIsotropicProps(iel)%E2)
@@ -120,8 +120,8 @@
           eterm=eterm*alfa*DeltaT  !<<<<<<<falta inserir proporcionalidade ao NTG
           termlo=zero
             
-          !calculando o vetor de cargas tÈrmicas do element
-          DO i=1,nip  !looping nos pontos de Gauss para integraÁ„o
+          !calculando o vetor de cargas t√©rmicas do element
+          DO i=1,nip  !looping nos pontos de Gauss para integra√ß√£o
             CALL shape_fun(fun,points,i)
             CALL shape_der(der,points,i)
             jac=MATMUL(der,coord)
@@ -129,10 +129,10 @@
             CALL invert(jac)
             deriv=MATMUL(jac,der)
             CALL beemat(bee,deriv)
-            termlo=termlo+MATMUL(MATMUL(TRANSPOSE(bee),dee),eterm)*det*weights(i)  !load=load+BT*D*defTerm*det(J)*peso   / tensıes compressivas s„o negativas
+            termlo=termlo+MATMUL(MATMUL(TRANSPOSE(bee),dee),eterm)*det*weights(i)  !load=load+BT*D*defTerm*det(J)*peso   / tens√µes compressivas s√£o negativas
           END DO
             
-          !acrescentando o vetor de carga tÈrmica do elemento ao vetor de carga global
+          !acrescentando o vetor de carga t√©rmica do elemento ao vetor de carga global
           Load(g) = Load(g) + termlo
               
         END IF  !(DeltaT.NE.zero)

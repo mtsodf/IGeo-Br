@@ -40,11 +40,11 @@
       CHARACTER(LEN=12),ALLOCATABLE:: LayersNames(:)    !nome das camadas.
 
       !Layer Properties
-      REAL(8),ALLOCATABLE:: EffectivePerms(:,:)         !permeabilidades (H e V) efetiva do fluido principal do po�o.
+      REAL(8),ALLOCATABLE:: EffectivePerms(:,:)         !permeabilidades (H e V) efetiva do fluido principal do poço.
       REAL(8),ALLOCATABLE:: Porosity(:)                 !porosidade.
-      REAL(8),ALLOCATABLE:: YoungModulus(:,:)           !M�dulo de Young: (1,:) vertical, (2,:) horizontal.
-      REAL(8),ALLOCATABLE:: Poisson(:,:)                !Raz�o de Poisson: (1,:) vertical, (2,:) horizontal.
-      REAL(8),ALLOCATABLE:: Kg(:)                       !M�dulo Bulk dos gr�os.
+      REAL(8),ALLOCATABLE:: YoungModulus(:,:)           !Módulo de Young: (1,:) vertical, (2,:) horizontal.
+      REAL(8),ALLOCATABLE:: Poisson(:,:)                !Razão de Poisson: (1,:) vertical, (2,:) horizontal.
+      REAL(8),ALLOCATABLE:: Kg(:)                       !Módulo Bulk dos grãos.
 
       !Initialization data
       REAL(8),ALLOCATABLE:: VerticalStress(:)
@@ -81,7 +81,7 @@
       !***************************************************************************
       !PRE-FRACTURE DATA.
       !***************************************************************************
-      LOGICAL:: PreFractureExists
+      LOGICAL:: PreFractureExists = .FALSE.
       REAL(8),ALLOCATABLE:: PreFractureLengh(:)       !<-length for each k layer.
       REAL(8),ALLOCATABLE:: PreFractureAperture(:)    !<-aperture for each k_layer.
       
@@ -92,7 +92,7 @@
       !***************************************************************************
       !INJECTION DATA.
       !***************************************************************************
-      LOGICAL:: InjectionRate,InjectionPressure
+      LOGICAL:: InjectionRate = .FALSE.,InjectionPressure = .FALSE.
       REAL(8):: InjX,InjZ1,InjZ2
       REAL(8):: Rate
       REAL(8):: Pinj,Zinj
@@ -101,12 +101,12 @@
       !***************************************************************************
       !WELL BORE DATA.. ( #DirectionalWell )
       !***************************************************************************
-      LOGICAL:: HorWellFlag                             !BOX MODEL AND HORIZONTAL WELL (X DIR)
+      LOGICAL:: HorWellFlag = .FALSE.                             !BOX MODEL AND HORIZONTAL WELL (X DIR)
       REAL(8):: WellZ,WellRadius,WellLength,WellPermMult
       LOGICAL,ALLOCATABLE:: WellBoreWallFlag(:)
       
       REAL(8):: Z_phase1                                !9 5/8 casing shoe.
-      LOGICAL:: VerticaDisplacementRestriction
+      LOGICAL:: VerticaDisplacementRestriction = .FALSE.
       
       !PRODUCTION CASE COMPLETION.
       ! #ProductionCompletion
@@ -201,10 +201,10 @@
       
       INTEGER:: nthreads
       
-      LOGICAL:: Report
+      LOGICAL:: Report = .FALSE.
         
       !PHYSICS FLAG-------------------------------------------------------------
-      LOGICAL:: Flow_flag, Structural_flag, Thermal_flag
+      LOGICAL:: Flow_flag = .FALSE., Structural_flag = .FALSE., Thermal_flag = .FALSE.
 
       !POREPRESSURE INITIALIZATION----------------------------------------------
       REAL(8):: OWdepth, OWpressure, &   !OW contact.
@@ -245,7 +245,7 @@
       INTEGER:: NodeMonitor
         
       !FLUID B.C.-------------------------------------------------------------
-      LOGICAL:: InfiniteFluidBC
+      LOGICAL:: InfiniteFluidBC = .FALSE.
       
       !OUTFLOW (FAR FIELD FLOW)
       TYPE(OutflowModel),ALLOCATABLE:: FarFieldFlow(:)
@@ -269,7 +269,7 @@
       TYPE (DamageLiquefaction),ALLOCATABLE:: Liquefaction(:)
       
       !THERMAL----------------------------------------------------------------
-      LOGICAL:: PerkinsGonzales
+      LOGICAL:: PerkinsGonzales = .FALSE.
       REAL(8),ALLOCATABLE:: ThermalProps(:,:)
       INTEGER,ALLOCATABLE:: ThermalPropsKinterval(:,:)
       REAL(8):: TopTemperatureZ, TopTemperature, TemperatureGrad
@@ -281,10 +281,10 @@
       
       !LARGE DISPLACEMENTS----------------------------------------------------
       !#UPDATEGEOMETRY
-      LOGICAL:: UpdateGeometry
+      LOGICAL:: UpdateGeometry = .FALSE.
       
       !LONG TER SIMULATION---------------------------------------------------
-      LOGICAL:: LongTermFlag
+      LOGICAL:: LongTermFlag = .FALSE.
       INTEGER:: LongTermNumStep
       REAL(8):: LongTermDt
       CHARACTER(LEN=50),ALLOCATABLE:: TimeSteps(:)                      !<- time steps in minutes
@@ -296,14 +296,14 @@
       !TYPE(SoilModel) :: SoilData
       
       !ELASTICITY: SPECIAL MODELS--------------------------------------------
-      LOGICAL:: TrasverseIsotropicModel
+      LOGICAL:: TrasverseIsotropicModel = .FALSE.
       REAL(8),ALLOCATABLE:: Dip(:),Strike(:)
       
       !FORMATION DAMAGE------------------------------------------------------
       CHARACTER(LEN=50),ALLOCATABLE:: FluidPermDamage(:,:)                      !K1, K2, time(min), perm.damage(adm)
       
       !WELL PIPE-------------------------------------------------------------
-      LOGICAL:: WellPipeModel
+      LOGICAL:: WellPipeModel = .FALSE.
       TYPE (WellPipe):: Pipe                                                    !Pipe object
       
       !MECS------------------------------------------------------------------
@@ -365,7 +365,7 @@
     !    CALL Error( "command #WORKPATH not found." )
     !END IF
 
-    !N�CLEOS DE PROCESSAMENTO.
+    !NÚCLEOS DE PROCESSAMENTO.
     CALL SearchInFile( Chanel_base, '#NTHREADS', success )
     IF(success) THEN
         READ( Chanel_base, * ) nthreads
@@ -700,9 +700,9 @@
             WellData%ConsModelParameters(3,i) = 1.0E3*WellData%ConsModelParameters(3,i)
           END IF
         END DO
-          
+
     END IF
-      
+
     !SPECIAL PORPOUSE MODELS (undrained, liquefaction).
     !%ListOfUndrainedLayers(0:)
     !%UndrainedLayerParameters(1,:)
@@ -1278,9 +1278,11 @@
     END IF
 
     !***************************************************************************
-    
+
+    CALL AllocateMissingWellData(WellData)
+    CALL AllocateMissingProblemData(Problem)
     Problem%WellData = WellData
-          
+
     !***************************************************************************
     !OTHER OPTIONS.
     !***************************************************************************
@@ -1293,6 +1295,83 @@
     
     RETURN
   END SUBROUTINE ReadBaseFile
+
+  !*****************************************************************************
+  !Aloca com tamanho zero os vetores de entrada opcionais que não foram lidos
+  !(palavra-chave ausente no arquivo .geo).
+  !
+  !O código percorre esses vetores com SIZE(), ANY() etc. sem testar
+  !ALLOCATED(). Para um vetor não alocado o resultado não é definido pelo
+  !padrão Fortran: o compilador Intel devolve tamanho zero, mas o gfortran
+  !devolve limites aleatórios e o programa acessa memória inválida.
+  !Com a alocação de tamanho zero, o comportamento passa a ser o mesmo em
+  !qualquer compilador.
+  !
+  !Ficam de fora:
+  ! - Problem%FarFieldFlow e Problem%InitialVariations: o código testa
+  !   ALLOCATED() neles para saber se a opção foi usada;
+  ! - WellData%WellBoreWallFlag: alocado depois, em NearWellboreModel.
+  !Nos vetores de 2 dimensões, a primeira dimensão é a mesma da alocação
+  !normal, para que referências como X(1,:) continuem válidas.
+  !*****************************************************************************
+  SUBROUTINE AllocateMissingWellData(WellData)
+
+    IMPLICIT NONE
+    TYPE (WellboreData), INTENT(IN OUT):: WellData
+
+    IF(.NOT.ALLOCATED(WellData%LayersNames)) ALLOCATE(WellData%LayersNames(0))
+    IF(.NOT.ALLOCATED(WellData%LayersTops)) ALLOCATE(WellData%LayersTops(0))
+    IF(.NOT.ALLOCATED(WellData%Porosity)) ALLOCATE(WellData%Porosity(0))
+    IF(.NOT.ALLOCATED(WellData%EffectivePerms)) ALLOCATE(WellData%EffectivePerms(2,0))
+    IF(.NOT.ALLOCATED(WellData%YoungModulus)) ALLOCATE(WellData%YoungModulus(2,0))
+    IF(.NOT.ALLOCATED(WellData%Poisson)) ALLOCATE(WellData%Poisson(2,0))
+    IF(.NOT.ALLOCATED(WellData%Kg)) ALLOCATE(WellData%Kg(0))
+    IF(.NOT.ALLOCATED(WellData%VerticalStress)) ALLOCATE(WellData%VerticalStress(0))
+    IF(.NOT.ALLOCATED(WellData%MaxHorizontalStress)) ALLOCATE(WellData%MaxHorizontalStress(0))
+    IF(.NOT.ALLOCATED(WellData%MinHorizontalStress)) ALLOCATE(WellData%MinHorizontalStress(0))
+    IF(.NOT.ALLOCATED(WellData%Porepressure)) ALLOCATE(WellData%Porepressure(0))
+    IF(.NOT.ALLOCATED(WellData%ConsModel)) ALLOCATE(WellData%ConsModel(3,0))
+    IF(.NOT.ALLOCATED(WellData%ConsModelParameters)) ALLOCATE(WellData%ConsModelParameters(10,0))
+    IF(.NOT.ALLOCATED(WellData%ListOfUndrainedLayers)) THEN
+      !Posição 0 guarda o número de camadas não drenadas; posições 1: as camadas.
+      ALLOCATE(WellData%ListOfUndrainedLayers(0:0))
+      WellData%ListOfUndrainedLayers = 0
+    END IF
+    IF(.NOT.ALLOCATED(WellData%UndrainedLayerParameters)) ALLOCATE(WellData%UndrainedLayerParameters(1,0))
+    IF(.NOT.ALLOCATED(WellData%PreFractureLengh)) ALLOCATE(WellData%PreFractureLengh(0))
+    IF(.NOT.ALLOCATED(WellData%PreFractureAperture)) ALLOCATE(WellData%PreFractureAperture(0))
+    IF(.NOT.ALLOCATED(WellData%InjPressureTable)) ALLOCATE(WellData%InjPressureTable(3,0))
+    IF(.NOT.ALLOCATED(WellData%InjRateTable)) ALLOCATE(WellData%InjRateTable(3,0))
+    IF(.NOT.ALLOCATED(WellData%MudWeightHistory)) ALLOCATE(WellData%MudWeightHistory(0))
+
+  END SUBROUTINE AllocateMissingWellData
+
+  !Mesmo objetivo de AllocateMissingWellData, para os dados gerais do problema.
+  SUBROUTINE AllocateMissingProblemData(Problem)
+
+    IMPLICIT NONE
+    TYPE (PD), INTENT(IN OUT):: Problem
+
+    IF(.NOT.ALLOCATED(Problem%MaxRate)) ALLOCATE(Problem%MaxRate(0))
+    IF(.NOT.ALLOCATED(Problem%EditProps_values)) ALLOCATE(Problem%EditProps_values(0))
+    IF(.NOT.ALLOCATED(Problem%EditProps_IJKinterval)) ALLOCATE(Problem%EditProps_IJKinterval(6,0))
+    IF(.NOT.ALLOCATED(Problem%EditProps_PropsNames)) ALLOCATE(Problem%EditProps_PropsNames(0))
+    IF(.NOT.ALLOCATED(Problem%Frac)) ALLOCATE(Problem%Frac(0))
+    IF(.NOT.ALLOCATED(Problem%CDM)) ALLOCATE(Problem%CDM(0))
+    IF(.NOT.ALLOCATED(Problem%ShearStrainDamage)) ALLOCATE(Problem%ShearStrainDamage(0))
+    IF(.NOT.ALLOCATED(Problem%Liquefaction)) ALLOCATE(Problem%Liquefaction(0))
+    IF(.NOT.ALLOCATED(Problem%ThermalProps)) ALLOCATE(Problem%ThermalProps(5,0))
+    IF(.NOT.ALLOCATED(Problem%ThermalPropsKinterval)) ALLOCATE(Problem%ThermalPropsKinterval(2,0))
+    IF(.NOT.ALLOCATED(Problem%ExplicitTemperatureChange)) ALLOCATE(Problem%ExplicitTemperatureChange(0))
+    IF(.NOT.ALLOCATED(Problem%TimeSteps)) ALLOCATE(Problem%TimeSteps(0))
+    IF(.NOT.ALLOCATED(Problem%CreepTable)) ALLOCATE(Problem%CreepTable(9,0))
+    IF(.NOT.ALLOCATED(Problem%FluidPermDamage)) ALLOCATE(Problem%FluidPermDamage(4,0))
+    IF(.NOT.ALLOCATED(Problem%TimeSeries)) ALLOCATE(Problem%TimeSeries(0))
+    IF(.NOT.ALLOCATED(Problem%TriAreas)) ALLOCATE(Problem%TriAreas(0))
+    IF(.NOT.ALLOCATED(Problem%Forces)) ALLOCATE(Problem%Forces(0))
+    IF(.NOT.ALLOCATED(Problem%Pipe%WellPath)) ALLOCATE(Problem%Pipe%WellPath(4,0))
+
+  END SUBROUTINE AllocateMissingProblemData
 
   SUBROUTINE ReadModelType(Chanel_base,ModelType)
 

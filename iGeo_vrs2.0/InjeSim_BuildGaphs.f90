@@ -1,4 +1,4 @@
-﻿!  InjeSim_BuildGaphs.f90 
+!  InjeSim_BuildGaphs.f90 
 !
 !  FUNCTIONS:
 !  InjeSim_BuildGaphs - Entry point of console application.
@@ -117,7 +117,7 @@ write(*,*)'1'
   CONTAINS
   
     SUBROUTINE invar(stress,sigm,dsbar,theta)
-      ! Rotina de Smith e Griffiths para c�lculo dos inveriantes de tens�o.
+      ! Rotina de Smith e Griffiths para cálculo dos inveriantes de tensão.
       ! This subroutine forms the stress invariants in 2- or 3-d.
       !
       IMPLICIT NONE

@@ -1,4 +1,4 @@
-﻿
+
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
@@ -14,8 +14,8 @@
   
     !element -> integral(Bt,DeltaSigma)
     SUBROUTINE ElementStressForce(nip,points,weights,coord,deltaStress,unbalForce)
-      !Subrotina para calcular a forÁa desbalanceada devido a diferenÁa entre tensıes.
-      !       fumbal(# nÛs) = int( transpose(B)* (sigma*-sigma) * dv
+      !Subrotina para calcular a força desbalanceada devido a diferença entre tensões.
+      !       fumbal(# nós) = int( transpose(B)* (sigma*-sigma) * dv
 
       USE MainConstants
       USE NumericalUtilities
@@ -25,22 +25,22 @@
       INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
 
       !INPUTS / OUTPUTS.
-      INTEGER,INTENT(IN)::nip  !n˙mero de pontos de integraÁ„o
-      REAL(iwp),INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integraÁ„o
-                            weights(:),&  !peso dos pontos de integraÁ„o
-                            coord(:,:)  !coordenada dos nÛs de um elemento
+      INTEGER,INTENT(IN)::nip  !número de pontos de integração
+      REAL(iwp),INTENT(IN)::points(:,:),&  !coordenadas dos pontos de integração
+                            weights(:),&  !peso dos pontos de integração
+                            coord(:,:)  !coordenada dos nós de um elemento
       REAL(iwp),INTENT(IN OUT)::unbalForce(:)  !matriz de rigidez do elemento
-      REAL(iwp),INTENT(IN)::deltaStress(:,:)  !delta de tens„o (tens„o desbalanceada)
+      REAL(iwp),INTENT(IN)::deltaStress(:,:)  !delta de tensão (tensão desbalanceada)
 
       !VARIABLES
       INTEGER::i  !contadores
       REAL(iwp)::det  !determinante do jacobiano
 
-      REAL(iwp),ALLOCATABLE:: bee(:,:),&  !matriz de derivadas das funÁıes de forma
-                              jac(:,:),&  !matriz jacobiana das funÁıes de forma
-                              fun(:),&  !funÁıes de forma
-                              der(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas naturais
-                              deriv(:,:)  !derivadas das funÁıes de forma dos deslocamentos em coordenadas globais
+      REAL(iwp),ALLOCATABLE:: bee(:,:),&  !matriz de derivadas das funções de forma
+                              jac(:,:),&  !matriz jacobiana das funções de forma
+                              fun(:),&  !funções de forma
+                              der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais
+                              deriv(:,:)  !derivadas das funções de forma dos deslocamentos em coordenadas globais
       
       ALLOCATE(bee(nst,ndof),jac(ndim,ndim),fun(nod),der(ndim,nod),deriv(ndim,nod))
       fun=0.0_iwp
@@ -51,12 +51,12 @@
       unbalForce = 0.0_iwp
       DO i=1,nip
 
-          CALL shape_fun(fun,points,i)  !funÁıes de forma no ponto de integraÁ„o i
-          CALL shape_der(der,points,i)  !derivada das funÁıes de forma
-          jac = MATMUL(der,coord)       !jacobiano do elemento no ponto de integraÁ„o i
+          CALL shape_fun(fun,points,i)  !funções de forma no ponto de integração i
+          CALL shape_der(der,points,i)  !derivada das funções de forma
+          jac = MATMUL(der,coord)       !jacobiano do elemento no ponto de integração i
           CALL determinante(jac,det)    !determinante do jacobiano
           CALL invert(jac)              !inverso do jacobiano
-          deriv = MATMUL(jac,der)       !derivadas das funÁıes de forma em coordenadas reais
+          deriv = MATMUL(jac,der)       !derivadas das funções de forma em coordenadas reais
           CALL beemat(bee,deriv)        !matriz de derivadas B
 
           unbalForce = unbalForce + MATMUL( TRANSPOSE( bee ) , deltaStress(:,i) ) * det * weights(i)
@@ -89,20 +89,20 @@
                 biot,&  !coeficiente de Biot.
                 NTG  !net-to-gross.
 
-      REAL(8),ALLOCATABLE:: fun(:),&  !funÁıes de forma
-                            der(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas naturais
-                            deriv(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas globais
-                            jac(:,:),&  !matriz jacobiana das funÁıes de forma
-                            bee(:,:),&  !matriz de derivadas das funÁıes de forma
-                            dee(:,:),&  !matriz de relaÁıes el·sticas
-                            pp(:),&  !poro-pressıes nodais em um elemenro
-                            porolo(:),&  !carga de poro-press„o em um elemento
-                            coupl(:,:),&  !matriz de acoplamento poro-el·stica de um elemento
-                            funf(:),&  !funÁıes de forma de poro-press„o
-                            derivf(:,:),&  !derivada das funÁıes de forma de funf em coordenadas locais
-                            derf(:,:),& !derivada das funÁıes de forma de funf em coordenadas globais
-                            volf(:,:),&  !relacionado ‡s deformaÁıes volumÈtricas
-                            vol(:)   !,&  !derivadas correpondentes ‡s deformaÁıes volumÈtricas
+      REAL(8),ALLOCATABLE:: fun(:),&  !funções de forma
+                            der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais
+                            deriv(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas globais
+                            jac(:,:),&  !matriz jacobiana das funções de forma
+                            bee(:,:),&  !matriz de derivadas das funções de forma
+                            dee(:,:),&  !matriz de relações elásticas
+                            pp(:),&  !poro-pressões nodais em um elemenro
+                            porolo(:),&  !carga de poro-pressão em um elemento
+                            coupl(:,:),&  !matriz de acoplamento poro-elástica de um elemento
+                            funf(:),&  !funções de forma de poro-pressão
+                            derivf(:,:),&  !derivada das funções de forma de funf em coordenadas locais
+                            derf(:,:),& !derivada das funções de forma de funf em coordenadas globais
+                            volf(:,:),&  !relacionado às deformações volumétricas
+                            vol(:)   !,&  !derivadas correpondentes às deformações volumétricas
 
       !MEMORY ALLOCATION.
       ALLOCATE( bee(nst,ndof),dee(nst,nst),&

@@ -1,11 +1,11 @@
 
     !GEOMECANICA COMPUTACIONAL DE RESERVATORIOS
-    !PETROBRAS-E&P-ENGP / RR / Eng. de ReservatÛrios
+    !PETROBRAS-E&P-ENGP / RR / Eng. de Reservat√≥rios
     !Eng. M.Sc. Luis Carlos de Sousa Jr
     !cxnx / sousajr@petrobras.com.br
     !
-    !vers„o 2.0 : 01 de stembro de 2010
-    !˙ltima modificaÁ„o: 11 de janeiro de 2012
+    !vers√£o 2.0 : 01 de stembro de 2010
+    !√∫ltima modifica√ß√£o: 11 de janeiro de 2012
     
     !****************************************************************************
     !             ROTINAS AUXILIARES PARA PROCESSAMENTO PARALELO
@@ -16,10 +16,10 @@
     CONTAINS
   
     SUBROUTINE PARTICIONAMENTO(vetor,particoes)
-      !Particionamento do domÌnio de acordo com os valores de um vetor de carga.
+      !Particionamento do dom√≠nio de acordo com os valores de um vetor de carga.
       !Regra: soma acumulada dos valores absolutos do vetor.
       !
-      !VARI¡VEIS
+      !VARI√ÅVEIS
         !IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,cont,&  !contadores
@@ -61,7 +61,7 @@
       ! a . b = SUM( ai*bi )
       !
       USE OMP_LIB  !bibliotecas OpenMP(R)
-      !VARI¡VELS
+      !VARI√ÅVELS
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,nParticoes,posicao1,posicao2
@@ -101,14 +101,14 @@
       !Multiplica uma matriz esparsa no formato CSR por um vetor.
       !y = A * x
       !
-      !VARI¡VEIS
+      !VARI√ÅVEIS
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,&  !contadores
-                 n,&  !tamanho dos vetores que ser„o multiplicados
-                 neq,&  !dimens„o da matriz (neq x neq)
-                 posicao1,posicao2  !marcadores de posiÁ„o na matriz "a" (CSR)
-        REAL(iwp)::ddoti  !MKL - BLAS: funÁ„o para fazer o dot product de um vetor esparso por um vetor cheio
+                 n,&  !tamanho dos vetores que ser√£o multiplicados
+                 neq,&  !dimens√£o da matriz (neq x neq)
+                 posicao1,posicao2  !marcadores de posi√ß√£o na matriz "a" (CSR)
+        REAL(iwp)::ddoti  !MKL - BLAS: fun√ß√£o para fazer o dot product de um vetor esparso por um vetor cheio
         INTEGER,INTENT(IN)::i1,i2
         INTEGER,INTENT(IN)::ia(:),ja(:)
         REAL(iwp),INTENT(IN)::a(:)
@@ -134,10 +134,10 @@
     END SUBROUTINE
     
     SUBROUTINE MAX_pp(a,b,particoes,max,maxDif)
-      !Acha m·ximo valor absoluto de a_pp e a m·xima diferenÁa absoluta 
+      !Acha m√°ximo valor absoluto de a_pp e a m√°xima diferen√ßa absoluta 
       !entre a_pp e b_pp.
       !
-      !VARI¡VEIS
+      !VARI√ÅVEIS
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,nParticoes,posicao1,posicao2
@@ -184,7 +184,7 @@
       ! a = a + escalar * b
       !
       USE OMP_LIB  !bibliotecas OpenMP(R)
-      !VARI¡VELS
+      !VARI√ÅVELS
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,nParticoes,posicao1,posicao2,n
@@ -221,7 +221,7 @@
       ! a = b + escalar * a
       !
       USE OMP_LIB  !bibliotecas OpenMP(R)
-      !VARI¡VELS
+      !VARI√ÅVELS
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,nParticoes,posicao1,posicao2
@@ -256,7 +256,7 @@
       ! c = a * b
       !
       USE OMP_LIB  !bibliotecas OpenMP(R)
-      !VARI¡VELS
+      !VARI√ÅVELS
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,nParticoes,posicao1,posicao2
@@ -290,7 +290,7 @@
       ! a = escalar * b
       !
       USE OMP_LIB  !bibliotecas OpenMP(R)
-      !VARI¡VELS
+      !VARI√ÅVELS
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,nParticoes,posicao1,posicao2
@@ -325,7 +325,7 @@
       ! a = escalar * b
       !
       USE OMP_LIB  !bibliotecas OpenMP(R)
-      !VARI¡VELS
+      !VARI√ÅVELS
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER::i,nParticoes,posicao1,posicao2,N

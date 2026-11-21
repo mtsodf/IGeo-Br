@@ -2,7 +2,7 @@
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
-  !Programa de Pos-graduaÁ„o em Geotecnia.
+  !Programa de Pos-gradua√ß√£o em Geotecnia.
   !University of Brasilia
 
 
@@ -69,9 +69,9 @@
       StressIncrement = MATMUL(dee,Strain)
       
       !Mohr-Coulomb Envelop----------------------------------------------------
-      c = Soil%cohesion    !coes„o (kPa)
-      phi = Soil%frictionAngle  !‚ngulo de atrito (graus)
-      psi = Soil%dilationAngle  !‚ngulo de dilataÁ„o (graus)
+      c = Soil%cohesion    !coes√£o (kPa)
+      phi = Soil%frictionAngle  !√¢ngulo de atrito (graus)
+      psi = Soil%dilationAngle  !√¢ngulo de dilata√ß√£o (graus)
       
       !Invariantes and yield function
       CALL invar(StressIncrement+CurrentStress,sigm,dsbar,lode_theta)
@@ -352,7 +352,7 @@
     RETURN
     END FUNCTION
     
-    !Potencial de escoamento para o critÈrio de Mohr-Coulomb.
+    !Potencial de escoamento para o crit√©rio de Mohr-Coulomb.
     SUBROUTINE tractionDQDS(tensor_s,ST,DQDS)
       ! This subroutine forms the derivatives of a Traction potential
       ! dq1=dQ/dsigm, dq2=dQ/dJ2, dq3=dQ/dJ3
@@ -363,7 +363,7 @@
       REAL(8),INTENT(IN)::ST,tensor_s(:)
       REAL(8),INTENT(OUT)::DQDS(6)
       
-      REAL(8):: sigm, dsbar, lode_theta, S3, S3_normal(3)  !invariantes de tens„o.
+      REAL(8):: sigm, dsbar, lode_theta, S3, S3_normal(3)  !invariantes de tens√£o.
       REAL(8):: eigenValues(3),eigenVectors(3,3),tensor(6),tensorRotated(6)
       INTEGER:: position(1)
       
@@ -515,7 +515,7 @@
       RETURN
     END SUBROUTINE mocouf
 
-    !Rotina de Smith e Griffiths para c·lculo da funÁ„o potencial de escoamento para o critÈrio de Mohr-Coulomb.
+    !Rotina de Smith e Griffiths para c√°lculo da fun√ß√£o potencial de escoamento para o crit√©rio de Mohr-Coulomb.
     SUBROUTINE mocouq(psi,dsbar,theta,dq1,dq2,dq3)
       ! This subroutine forms the derivatives of a Mohr-Coulomb potential
       ! function with respect to the three invariants (psi in degrees).
@@ -1040,7 +1040,7 @@
     RETURN
     END SUBROUTINE
         
-    !FunÁ„o potencial de escoamento para o critÈrio Cam-Clay Modificado.
+    !Fun√ß√£o potencial de escoamento para o crit√©rio Cam-Clay Modificado.
     !dq1=dQ/dsigm, dq2=dQ/dJ2, dq3=dQ/dJ3
     SUBROUTINE mcc_q(Pc,M,P,Q,dq1,dq2,dq3)
       ! This subroutine forms the derivatives of a Mohr-Coulomb potential
@@ -1280,17 +1280,17 @@
       REAL(8):: angle = 90.0
       
       !***********************************************************************      
-      ! MÛdulo de Young, no plano de fraqueza.                               !
-      ! MÛdulo de Young, normal ao plano de fraqueza                         !
-      ! Poisson para deformaÁ„o no plano de fraqueza                         !
-      !     devido ‡s tensıes atuantes na normal ao plano de fraqueza.       !
-      ! Poisson para deformaÁ„o no plano de deposiÁ„o                        !
-      !     devido ‡s tensıes atuantes no mesmo plano.                       !
-      ! ¬ngulo azimute da estrutura geolÛgica planar (strike)                !
-      !     em relaÁ„o ao eixo y (norte) e no sentido hor·rio                !
-      ! ¬ngulo de inclinaÁ„o da estrutura geolÛgica planar (dip)             !           
-      !     em relaÁ„o ao plano horizontal xy e no sentido hor·rio           !
-      ! Matriz constitutiva el·stica global                                  !
+      ! M√≥dulo de Young, no plano de fraqueza.                               !
+      ! M√≥dulo de Young, normal ao plano de fraqueza                         !
+      ! Poisson para deforma√ß√£o no plano de fraqueza                         !
+      !     devido √†s tens√µes atuantes na normal ao plano de fraqueza.       !
+      ! Poisson para deforma√ß√£o no plano de deposi√ß√£o                        !
+      !     devido √†s tens√µes atuantes no mesmo plano.                       !
+      ! √Çngulo azimute da estrutura geol√≥gica planar (strike)                !
+      !     em rela√ß√£o ao eixo y (norte) e no sentido hor√°rio                !
+      ! √Çngulo de inclina√ß√£o da estrutura geol√≥gica planar (dip)             !           
+      !     em rela√ß√£o ao plano horizontal xy e no sentido hor√°rio           !
+      ! Matriz constitutiva el√°stica global                                  !
       !***********************************************************************
       CALL D_HomogeneousElasticMatrixTransvIso_PUCtecgraf(Young,YoungNormal,&
                                                 Poisson,Poisson,angle,angle,dee)
@@ -1325,10 +1325,10 @@
   
       !***********************************************************************
       !																	     !
-      ! Tecnologia em ComputaÁ„o Gr·fica - TECGRAF                           !
-      ! PontifÌcia Universidade CatÛlica do Rio de Janeiro - PUC-Rio         !
+      ! Tecnologia em Computa√ß√£o Gr√°fica - TECGRAF                           !
+      ! Pontif√≠cia Universidade Cat√≥lica do Rio de Janeiro - PUC-Rio         !
       !                                                                      !
-      ! Grupo de Geomec‚nica Computacional                                   !
+      ! Grupo de Geomec√¢nica Computacional                                   !
       ! Coordenadora: Deane Roehl                                            !
       ! Contato: geomec@tecgraf.puc-rio.br                                   !
       !                                                                      !
@@ -1339,66 +1339,66 @@
       ! Data:    26/09/2011												     !
       ! Autor:   Roberto J. Q. Quispe 									     !
       !																	     !
-      ! ModificaÁıes													     !
+      ! Modifica√ß√µes													     !
       !   Data:															     !
       !																	     !
       !***********************************************************************
       ! 																	 !
-      ! DescriÁ„o: Rotac„o da matriz constitutiva el·stica para um           !
-      !            um meio geologico transversalmente isotrÛpico com  	     !
-      !            vetor de tensıes: (Sxx, Syy, Szz, Sxy, Sxz, Syz)          !
+      ! Descri√ß√£o: Rotac√£o da matriz constitutiva el√°stica para um           !
+      !            um meio geologico transversalmente isotr√≥pico com  	     !
+      !            vetor de tens√µes: (Sxx, Syy, Szz, Sxy, Sxz, Syz)          !
       !                                                                      !
       ! Ref: Kim, J-M. Vectorial formulation of direction cosines for        !
       !       anisotropic geologic structures from their geologic angle      !
       !       measurements. Mathematical Geology, 37 (8), 2005.              !
       ! 																	 !
       ! Argumentos:														     !
-      !   Ea       - MÛdulo de Young, no plano de deposiÁ„o ab               !
-      !   Ec       - MÛdulo de Young, na direÁ„o de deposiÁ„o c              !
-      !   niac     - MÛdulo de Poisson para deformaÁ„o no plano de deposiÁ„o !
-      !              devido ‡s tensıes atuantes na direÁ„o de deposiÁ„o      !
-      !   niab     - MÛdulo de Poisson para deformaÁ„o no plano de deposiÁ„o !
-      !              devido ‡s tensıes atuantes no mesmo plano               !
-      !   sf[DEG]  - ¬ngulo azimute da estrutura geolÛgica planar (strike)   !
-      !              em relaÁ„o ao eixo y (norte) e no sentido hor·rio       !
-      !	df[DEG]	 - ¬ngulo de inclinaÁ„o da estrutura geolÛgica planar (dip)  ! 
-      !              em relaÁ„o ao plano horizontal xy e no sentido hor·rio  !
-      !   ML       - Matriz constitutiva el·stica local                      !
-      !   R        - Matriz de rotaÁ„o do sistema local para o global        !
-      !   MG       - Matriz constitutiva el·stica global                     !
+      !   Ea       - M√≥dulo de Young, no plano de deposi√ß√£o ab               !
+      !   Ec       - M√≥dulo de Young, na dire√ß√£o de deposi√ß√£o c              !
+      !   niac     - M√≥dulo de Poisson para deforma√ß√£o no plano de deposi√ß√£o !
+      !              devido √†s tens√µes atuantes na dire√ß√£o de deposi√ß√£o      !
+      !   niab     - M√≥dulo de Poisson para deforma√ß√£o no plano de deposi√ß√£o !
+      !              devido √†s tens√µes atuantes no mesmo plano               !
+      !   sf[DEG]  - √Çngulo azimute da estrutura geol√≥gica planar (strike)   !
+      !              em rela√ß√£o ao eixo y (norte) e no sentido hor√°rio       !
+      !	df[DEG]	 - √Çngulo de inclina√ß√£o da estrutura geol√≥gica planar (dip)  ! 
+      !              em rela√ß√£o ao plano horizontal xy e no sentido hor√°rio  !
+      !   ML       - Matriz constitutiva el√°stica local                      !
+      !   R        - Matriz de rota√ß√£o do sistema local para o global        !
+      !   MG       - Matriz constitutiva el√°stica global                     !
       !***********************************************************************
       IMPLICIT NONE
 
-      ! Vari·veis
+      ! Vari√°veis
       REAL(8), intent(in) :: Ea, Ec, niac, niab, sf, df
       REAL(8) :: sf_rad, df_rad
       REAL(8) :: Eb, nibc, Gab, Gbc, Gca
       REAL(8) :: PI, ZER, ONE, TWO, CL
-      ! Matriz constitutiva el·stica local
+      ! Matriz constitutiva el√°stica local
       REAL(8), dimension(6,6) :: ML, R
-      ! Vetores unit·rios e vetores auxiliares
+      ! Vetores unit√°rios e vetores auxiliares
       REAL(8), dimension(3) :: a, b, c
-      ! Matriz constitutiva el·stica global 
+      ! Matriz constitutiva el√°stica global 
       REAL(8), dimension(6,6), intent(out) :: MG
   
-      ! DefiniÁ„o de constantes numÈricas
+      ! Defini√ß√£o de constantes num√©ricas
       PI  = DACOS(-1.00D0)
       ZER = 0.00D0
       ONE = 1.00D0
       TWO = 2.00D0
  
-      ! TransformaÁ„o dos ‚ngulos de graus para radianos
+      ! Transforma√ß√£o dos √¢ngulos de graus para radianos
       sf_rad = sf*PI/180.00D0 !strike
       df_rad = df*PI/180.00D0 !dip
  
-      ! Constantes para material transversalmente isotrÛpico
+      ! Constantes para material transversalmente isotr√≥pico
       Eb   = Ea
       nibc = niac
-      Gca  = 0.25D0*(Ea+Ec)/(ONE+niac) !AproximaÁ„o
+      Gca  = 0.25D0*(Ea+Ec)/(ONE+niac) !Aproxima√ß√£o
       Gbc  = Gca
       Gab  = Ea/(TWO*(ONE+niab))
 
-      ! Montagem da matriz constitutiva el·stica local
+      ! Montagem da matriz constitutiva el√°stica local
       CL = ONE/(Ea*Eb*Ec) - niab**TWO/(Ea**TWO*Eb) - nibc**TWO/(Ea*Eb**TWO) &
                           - niac**TWO/(Ea**TWO*Eb) - TWO*niab*nibc*niac/(Ea**TWO*Eb)
 
@@ -1444,7 +1444,7 @@
       b = (/DSIN(sf_rad), DCOS(sf_rad), 0.00D0/)
       c = (/DCOS(sf_rad)*DSIN(df_rad), -DSIN(sf_rad)*DSIN(df_rad), DCOS(df_rad)/)
 
-      !Matriz de rotaÁ„o 
+      !Matriz de rota√ß√£o 
       R(1,:) = (/a(1)**TWO,     a(2)**TWO,     a(3)**TWO,     a(1)*a(2),           a(3)*a(1),           a(2)*a(3)          /)
       R(2,:) = (/b(1)**TWO,     b(2)**TWO,     b(3)**TWO,     b(1)*b(2),           b(3)*b(1),           b(2)*b(3)          /)
       R(3,:) = (/c(1)**TWO,     c(2)**TWO,     c(3)**TWO,     c(1)*c(2),           c(3)*c(1),           c(2)*c(3)          /)
@@ -1452,7 +1452,7 @@
       R(5,:) = (/TWO*c(1)*a(1), TWO*c(2)*a(2), TWO*c(3)*a(3), c(1)*a(2)+a(1)*c(2), c(3)*a(1)+a(3)*c(1), c(2)*a(3)+a(2)*c(3)/)
       R(6,:) = (/TWO*b(1)*c(1), TWO*b(2)*c(2), TWO*b(3)*c(3), b(1)*c(2)+c(1)*b(2), b(3)*c(1)+c(3)*b(1), b(2)*c(3)+c(2)*b(3)/)
 
-      !Matriz constitutiva el·stica global 
+      !Matriz constitutiva el√°stica global 
       MG =  MATMUL(TRANSPOSE(R),MATMUL(ML,R))
 
       RETURN

@@ -1,0 +1,32 @@
+# Build com gfortran (Makefile)
+iGeo_vrs2.0/build/
+*.dSYM/
+
+# Build com o compilador Intel (Build.bat)
+*.exe
+*.obj
+*.mod
+*.o
+
+# Saídas de simulação do iGeo
+*.log
+*.femOutput
+*.vtk
+*.REPORT.txt
+*.out.msh
+*.wellbore.out
+*.stdout.txt
+
+# Saída do pós-processador BuildGraphs (InjeSim_BuildGaphs*.f90)
+OUTPUT.txt
+
+# Saídas de tools/perfil_abertura_fratura.py (figuras e CSV)
+*.png
+*.csv
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store

@@ -15,28 +15,28 @@
 
 
   SUBROUTINE MatrizDerivadaFuncForma(i,ndim,nod,coord,points,det,deriv,bee)
-  !Rotina para c�lculo da matriz de [B] dee derivadas das
-  !fun��es de forma em um dado ponto de Gauss.
-  !{deforma��o}=[B]*{deslocamentos nodais}
+  !Rotina para cálculo da matriz de [B] dee derivadas das
+  !funções de forma em um dado ponto de Gauss.
+  !{deformação}=[B]*{deslocamentos nodais}
   !
   !USE NumericalUtilities
-  !vari�veis
+  !variáveis
   IMPLICIT NONE
   INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
-  INTEGER,INTENT(IN)::i,&  !n�mero do ponto de Gauss
-  ndim,&  !n�mero de dimens�es
-  nod  !n�mero de n�s de deslocamento por elemento
+  INTEGER,INTENT(IN)::i,&  !número do ponto de Gauss
+  ndim,&  !número de dimensões
+  nod  !número de nós de deslocamento por elemento
   REAL(iwp),INTENT(IN OUT)::det  !determinante de matriz
-  REAL(iwp),ALLOCATABLE::der(:,:),&  !derivadas das fun��es de forma com rela��o �s coordenadas locais
-  jac(:,:)    !matriz jacobiana das fun��es de forma
-  REAL(iwp),ALLOCATABLE,INTENT(IN)::coord(:,:),&  !coordenada dos n�s de um elemento
-  points(:,:)  !coordenadas dos pontos de integra��o
-  REAL(iwp),ALLOCATABLE,INTENT(IN OUT)::bee(:,:),&  !matriz de derivadas das fun��es de forma
-  deriv(:,:)  !derivadas das fun��es de forma com rela��o �s coordenadas globais
+  REAL(iwp),ALLOCATABLE::der(:,:),&  !derivadas das funções de forma com relação às coordenadas locais
+  jac(:,:)    !matriz jacobiana das funções de forma
+  REAL(iwp),ALLOCATABLE,INTENT(IN)::coord(:,:),&  !coordenada dos nós de um elemento
+  points(:,:)  !coordenadas dos pontos de integração
+  REAL(iwp),ALLOCATABLE,INTENT(IN OUT)::bee(:,:),&  !matriz de derivadas das funções de forma
+  deriv(:,:)  !derivadas das funções de forma com relação às coordenadas globais
   ALLOCATE(der(ndim,nod),jac(ndim,ndim))
   !
-  CALL shape_der(der,points,i)  !fun��es de forma [N]
-  jac=MATMUL(der,coord)         !jacobiano da transforma��o de sistema de coordenadas [J]
+  CALL shape_der(der,points,i)  !funções de forma [N]
+  jac=MATMUL(der,coord)         !jacobiano da transformação de sistema de coordenadas [J]
   CALL determinante(jac,det)    !determinante do Jacobiano det[J]
   CALL invert(jac)              !inverso do Jacobiano: 1/[J]
   deriv=MATMUL(jac,der)         !matriz de derivadas
@@ -242,9 +242,9 @@
   !   This subroutine computes the values of the shape functions.
   !   to local coordinates
   !
-  !   points(:,:) - coordenadas naturais dos pontos de integra��o
-  !   i - n�mero do ponto de integra��o
-  !   fun(:) - retorna as fun��es de forma no ponto de integra��o i
+  !   points(:,:) - coordenadas naturais dos pontos de integração
+  !   i - número do ponto de integração
+  !   fun(:) - retorna as funções de forma no ponto de integração i
   !
   IMPLICIT NONE
   INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
@@ -403,7 +403,7 @@
       pt125*xip*etam*zetap,pt125*xip*etam*zetam,                     &
       pt125*xim*etap*zetam,pt125*xim*etap*zetap,                     &
       pt125*xip*etap*zetap,pt125*xip*etap*zetam/)
-    CASE(10)!ELEMENTO TETRA�DRICO QUADR�TICO--------------------------------
+    CASE(10)!ELEMENTO TETRAÉDRICO QUADRÁTICO--------------------------------
       L1=points(i,1);L2=points(i,2);L3=points(i,3);L4=one-L1-L2-L3
       fun(1) = (2*L1-1)*L1
       fun(2) = (2*L2-1)*L2
@@ -728,7 +728,7 @@
       der(3,6)= pt125*xim*etap
       der(3,7)= pt125*xip*etap
       der(3,8)=-pt125*xip*etap
-    CASE(10)!ELEMENTO TETRA�DRICO QUADR�TICO--------------------------------
+    CASE(10)!ELEMENTO TETRAÉDRICO QUADRÁTICO--------------------------------
       L1=points(i,1);L2=points(i,2);L3=points(i,3);L4=one-L1-L2-L3
       der(1,1)=two*L1+(two*L1-one)
       der(1,2)=zero
@@ -889,7 +889,7 @@
   RETURN
   END SUBROUTINE checon
 
-  !rotina de Smith e Griffiths para c�lculo das derivadas dos invariantes de tens�o em rela��o �s tens�es.
+  !rotina de Smith e Griffiths para cálculo das derivadas dos invariantes de tensão em relação às tensões.
   SUBROUTINE formm(stress,m1,m2,m3)
   !
   ! This subroutine forms the derivatives of the invariants with respect to

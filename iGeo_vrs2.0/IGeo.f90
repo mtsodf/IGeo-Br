@@ -27,7 +27,7 @@
     CHARACTER(LEN=320)::  BaseFile, &     !file with basic information about the case.
                           Path            !work directory where the case file is located
     !and where temporary files will be created.
-    CHARACTER(LEN=320)::buffer            !vari�vel para armazenamento de argumentos passados ao programa.
+    CHARACTER(LEN=320)::buffer            !variável para armazenamento de argumentos passados ao programa.
     INTEGER:: numARG
     LOGICAL:: test,&
               found

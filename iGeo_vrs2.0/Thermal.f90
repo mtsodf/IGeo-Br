@@ -1,4 +1,4 @@
-﻿
+
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
@@ -17,7 +17,7 @@
   
     TYPE, PUBLIC:: ThermalModel
       
-      LOGICAL:: Numerical                           !.TRUE. for Finite Volume.
+      LOGICAL:: Numerical = .FALSE.                           !.TRUE. for Finite Volume.
                                                     !.FALSE. for analytical (PG).
       
       REAL(8):: Tinj,Zinj,GradTinj                  !input data
@@ -400,7 +400,7 @@
       END DO
       
       DO i=1,GeomechanicalModel%NumNodes
-        IF(TempModel%BC_flag(i)==.FALSE.) &
+        IF(.NOT.TempModel%BC_flag(i)) &
           
           TempModel%FluidTemperature(i) = TempModel%FluidTemperature(i) - flow(i) * DeltaTime / storage(i)
           
@@ -447,15 +447,15 @@
       REAL(8):: LX,LY,LZ,AX,AY,AZ,K,L,area,T,TX,TY,TZ,z,h
       INTEGER:: pointers(12,2)
       
-      REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integra��o.
-                            weights(:)        !peso dos pontos de integra��o.
+      REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integração.
+                            weights(:)        !peso dos pontos de integração.
       REAL(8),ALLOCATABLE:: jac(:,:),der(:,:),deriv(:,:)
       
       REAL(8),ALLOCATABLE:: density(:)     !node void volume.
       
       INTEGER:: Nz,Nrad,iz,irad
       
-      IF(Problem%PerkinsGonzales==.FALSE.) TempModel%Numerical = .TRUE.
+      IF(.NOT.Problem%PerkinsGonzales) TempModel%Numerical = .TRUE.
       
       TempModel%Tinj = Problem%Tinj
       TempModel%Zinj = Problem%TinjZ
@@ -645,6 +645,8 @@
       TempModel%NodePOR = 0.0
       density = 0.0
       
+      !coord já foi alocado automaticamente na atribuição do laço anterior.
+      IF(ALLOCATED(coord)) DEALLOCATE(coord)
       ALLOCATE( points(nip,ndim),coord(nod,ndim),  &
                 jac(ndim,ndim),weights(nip),der(ndim,nod) )
       element = GeomechanicalModel%element
@@ -713,7 +715,7 @@
               !IF( z<=Problem%WellData%InjZ1 .AND. z>=Problem%WellData%InjZ2 .AND. &
               !    x<=Problem%WellData%InjX  )THEN
               IF( z<=Problem%WellData%InjZ1 .AND. z>=Problem%WellData%InjZ2 .AND. &
-                  FlowModel%InjNode(i)==.TRUE. )THEN
+                  FlowModel%InjNode(i) )THEN
                 TempModel%BC_flag(i) = .TRUE.
                 z = GeomechanicalModel%Z(i) - Problem%TinjZ
                 TempModel%FluidTemperature(i) = Problem%Tinj - z * Problem%TinjGrad
@@ -725,7 +727,7 @@
           END DO
         END DO
         
-      ELSEIF( Problem%WellData%HorWellFlag == .TRUE.)THEN
+      ELSEIF( Problem%WellData%HorWellFlag)THEN
         
         !BOX MODEL / HORIZONTAL WELL --------------------------------------------------------------
         i = 0
@@ -816,7 +818,7 @@
         DO irad=1, nrad+1
           i = i + 1
           
-          IF( FlowModel%InjNode(i)==.TRUE. )THEN
+          IF( FlowModel%InjNode(i) )THEN
             
             !CumFlowVolume(iz) = CumFlowVolume(iz) + FlowModel%NodeFlows(i) * DeltaTime
             CumFlowVolume(iz) = CumFlowVolume(iz) - FlowModel%NodeFlows(i) * DeltaTime

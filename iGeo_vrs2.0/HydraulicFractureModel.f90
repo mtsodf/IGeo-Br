@@ -1,4 +1,4 @@
-﻿  
+  
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
@@ -15,7 +15,7 @@
 
         INTEGER:: NumElements
           
-        LOGICAL:: ContainsFracModel
+        LOGICAL:: ContainsFracModel = .FALSE.
         !INTEGER:: StartDOF  !after fluid pressure.
         
         !INTEGER,ALLOCATABLE:: FracElsNodes(:,:)
@@ -177,8 +177,8 @@
       INTEGER,ALLOCATABLE:: num(:)            !element incidence.
       REAL(8):: det
       REAL(8),ALLOCATABLE:: coord(:,:)        !element nodal coordenates.
-      REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integra��o.
-                            weights(:)        !peso dos pontos de integra��o.
+      REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integração.
+                            weights(:)        !peso dos pontos de integração.
       REAL(8),ALLOCATABLE:: jac(:,:),der(:,:),deriv(:,:)
           
       REAL(8):: PermTensor(2,2)
@@ -533,8 +533,8 @@
       INTEGER:: num(8)                        !element incidence.
       REAL(8):: det
       REAL(8):: coord(3,3)        !element nodal coordenates.
-      REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integra��o.
-                            weights(:)        !peso dos pontos de integra��o.
+      REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integração.
+                            weights(:)        !peso dos pontos de integração.
       REAL(8),ALLOCATABLE:: jac(:,:),der(:,:),deriv(:,:)
           
       REAL(8):: PermTensor(2,2)

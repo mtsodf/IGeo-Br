@@ -1,4 +1,4 @@
-﻿
+
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
@@ -81,7 +81,7 @@
       !OPENING AND INITIALIZING VTK FILE+++++++++++++++++++++++++++++++++++++++++++++++++
       i = LEN_TRIM(VTKfileName)
       WRITE(text,*)VTKfileName(1:(i-4)),'_',TRIM(ADJUSTL(stepChar)),'.vtk'
-      OPEN(vtkFileChanel,FILE=TRIM(text))
+      OPEN(vtkFileChanel,FILE=TRIM(ADJUSTL(text)))
 
       ALLOCATE( g_coord(3,GeomechanicalModel%NumNodes) )
       g_coord = 0.0

@@ -1,4 +1,4 @@
-﻿
+
 +++++++++++++++++++++++++++++++++++++++++++++
 Geomechanics Modeling
 Eng. Luis Carlos de Sousa Jr

@@ -37,20 +37,20 @@
   RETURN
   END SUBROUTINE TensorDeformacaoTermica
 
-    !Calcula Estado de Tens�es na parede do po�o.
+    !Calcula Estado de Tensões na parede do poço.
     FUNCTION WellboreStress(angle,sxx,syy,sxy)
 
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
-        REAL(iwp):: WellboreStress(2)  !1 - tens�o radial, 2 - tens�o tangencial.
-        REAL(iwp),INTENT(IN):: angle                  !�ngulo em graus.
-        REAL(iwp),INTENT(IN):: sxx,syy,sxy            !tens�es cartesianas na parede do po�o.
+        REAL(iwp):: WellboreStress(2)  !1 - tensão radial, 2 - tensão tangencial.
+        REAL(iwp),INTENT(IN):: angle                  !ângulo em graus.
+        REAL(iwp),INTENT(IN):: sxx,syy,sxy            !tensões cartesianas na parede do poço.
 
         REAL(iwp):: pi = 3.1415926535897932384626433832795
         REAL(iwp):: theta
 
-        !Rotacionando tens�es.
-        !"angle" � o �ngulo com o eixo x.
+        !Rotacionando tensões.
+        !"angle" é o ângulo com o eixo x.
         theta = angle
         WellboreStress(1) = (sxx+syy)/2.0 + (sxx-syy)/2.0*COS(2.0*theta) + sxy*SIN(2.0*theta)
         theta = angle + pi/2.0
@@ -59,7 +59,7 @@
     END FUNCTION
 
     SUBROUTINE invar(stress,sigm,dsbar,theta)
-        ! Rotina de Smith e Griffiths para c�lculo dos inveriantes de tens�o.
+        ! Rotina de Smith e Griffiths para cálculo dos inveriantes de tensão.
         ! This subroutine forms the stress invariants in 2- or 3-d.
         !
         IMPLICIT NONE
@@ -397,9 +397,9 @@
     !END SUBROUTINE
     !
     SUBROUTINE D_HomogeneousElasticMatrix(dee,e,v)
-        !Subrotina para c�lculo da matriz el�stica [D] para materiais el�sticos homog�neos.
+        !Subrotina para cálculo da matriz elástica [D] para materiais elásticos homogêneos.
         !
-        !Vari�veis
+        !Variáveis
         IMPLICIT NONE
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         REAL(iwp),INTENT(IN)::e,v
@@ -423,7 +423,7 @@
             STOP
         END IF
         !
-        !Constru��o da matriz D
+        !Construção da matriz D
         dee=zero
         v1=one-v
         c=e/((one+v)*(one-two*v))
@@ -451,11 +451,11 @@
         IMPLICIT NONE
         REAL(8),INTENT(IN):: DeltaT
         REAL(8),INTENT(IN)::alfa
-        REAL(8),INTENT(OUT)::eterm(6)  !deformaÁ„o de origem tÈrmica
+        REAL(8),INTENT(OUT)::eterm(6)  !deformação de origem térmica
 
         REAL(8):: zero = 0.0, one = 1.0
 
-        !calculando acrÈscimo de temperatura e deformaÁ„o tÈrmica
+        !calculando acréscimo de temperatura e deformação térmica
         eterm=zero
         eterm=(/one,one,one,zero,zero,zero/)
         eterm=eterm*alfa*DeltaT

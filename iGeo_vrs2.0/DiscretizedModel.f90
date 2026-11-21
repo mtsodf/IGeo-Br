@@ -123,7 +123,7 @@
 
   TYPE BoundaryNode
     
-    LOGICAL:: Xboundary,Yboundary,Zboundary
+    LOGICAL:: Xboundary = .FALSE.,Yboundary = .FALSE.,Zboundary = .FALSE.
     
   END TYPE
   
@@ -191,7 +191,7 @@
     LOGICAL,ALLOCATABLE:: ActiveToFlowElements(:)   !active to porous flow.
   
     !Creep flag
-    LOGICAL:: Creep
+    LOGICAL:: Creep = .FALSE.
 
     !ELEMENT PROPERTIES--------------------------------------------------
     !7 digits precision- REAL(8).
@@ -309,7 +309,7 @@
     
     !-------------------------------------------------------------------
     
-    LOGICAL:: UpdateGeometry
+    LOGICAL:: UpdateGeometry = .FALSE.
     
   END TYPE Model
 
@@ -349,13 +349,13 @@
       REAL(8),ALLOCATABLE:: pp(:)             !element nodal porepressure.
       REAL(8):: p
         
-      INTEGER:: ndim,&                        !dimensıes do problema
-                nip,&                         !n˙mero de pontos de integraÁ„o
-                nodf                          !n˙mero de nÛs com grau de liberdade de poro-press„o.
+      INTEGER:: ndim,&                        !dimensões do problema
+                nip,&                         !número de pontos de integração
+                nodf                          !número de nós com grau de liberdade de poro-pressão.
       CHARACTER(LEN=320)::element
-      REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integraÁ„o
-                            weights(:),&      !peso dos pontos de integraÁ„
-                            funf(:)           !funÁıes de forma de poro-press„o
+      REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integração
+                            weights(:),&      !peso dos pontos de integraçã
+                            funf(:)           !funções de forma de poro-pressão
         
       REAL(8):: por,e,poisson
         
@@ -425,7 +425,7 @@
       !PROPERTIES.
       !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         
-      !Lendo algumas propriedades que s�o muito utilizadas.
+      !Lendo algumas propriedades que são muito utilizadas.
       !ALLOCATE( & !DiscreteModel%YoungMod(WellModel%NumElements), &
       !    DiscreteModel%Poisson(WellModel%NumElements), 
       ALLOCATE( DiscreteModel%TransverIsotropicProps(WellModel%NumElements),&
@@ -966,9 +966,11 @@
       !DAMAGE.
       !***************************************************************************
       !TYPE (ShearDamage):: ShearStrainDamage
+      !Sempre alocado (tamanho 0 quando a opção não é usada), pois é
+      !percorrido com SIZE() em outros módulos.
+      ALLOCATE(DiscreteModel%ShearStrainDamage(SIZE(Problem%ShearStrainDamage)))
       IF(SIZE(Problem%ShearStrainDamage(:))>0) THEN
         n = SIZE(Problem%ShearStrainDamage)
-        ALLOCATE(DiscreteModel%ShearStrainDamage(n))
         DO i=1,n
           
           DiscreteModel%ShearStrainDamage(i)%LimitPlasticDeviatoricStrain = &
@@ -1000,9 +1002,11 @@
       END IF
       
       !TYPE(StiffnessDamage):: Liquefaction
+      !Sempre alocado (tamanho 0 quando a opção não é usada), pois é
+      !percorrido com SIZE() em outros módulos.
+      ALLOCATE(DiscreteModel%Liquefaction(SIZE(Problem%Liquefaction)))
       IF(SIZE(Problem%Liquefaction(:))>0) THEN
         n = SIZE(Problem%Liquefaction)
-        ALLOCATE(DiscreteModel%Liquefaction(n))
         
         DO i=1,n
           
@@ -1032,9 +1036,11 @@
       END IF
 
       !TYPE (PermModif):: PermMultModel
+      !Sempre alocado (tamanho 0 quando a opção não é usada), pois é
+      !percorrido com SIZE() em outros módulos.
+      ALLOCATE(DiscreteModel%PermModel(SIZE(Problem%Frac)))
       IF(SIZE(Problem%Frac(:))>0) THEN
         n = SIZE(Problem%Frac)
-        ALLOCATE(DiscreteModel%PermModel(n))
         
         DO i=1,n
           
@@ -1136,11 +1142,11 @@
 
     !DEFINITE O TIPO DE ELEMENTO FINITO DA MALHA.
     !DiscreteModel%element="hexahedron"            !tipo de elemento finito ('hexahedron' ou 'tetrahedron').
-    !DiscreteModel%NumDimensions = 3               !ndim - n�mero de dimens�es do problema.
-    !DiscreteModel%NumNodesPerElement = 8          !nod - n�mero de n�s de deslocamento por elemento.
-    !DiscreteModel%NumDOFUperElement = 24          !ndof - n�mero de graus de liberdade de deslocamento por elemento.
-    !DiscreteModel%NumDOFPperElement = 8           !nodf - n�mero de n�s com grau de liberdade de poro-press�o (mas ser� usado como constante).
-    !DiscreteModel%NumDOFUperNode = 3              !nodof - n�mero de graus de liberdade de deslocamento por n�.
+    !DiscreteModel%NumDimensions = 3               !ndim - número de dimensões do problema.
+    !DiscreteModel%NumNodesPerElement = 8          !nod - número de nós de deslocamento por elemento.
+    !DiscreteModel%NumDOFUperElement = 24          !ndof - número de graus de liberdade de deslocamento por elemento.
+    !DiscreteModel%NumDOFPperElement = 8           !nodf - número de nós com grau de liberdade de poro-pressão (mas será usado como constante).
+    !DiscreteModel%NumDOFUperNode = 3              !nodof - número de graus de liberdade de deslocamento por nó.
     !DiscreteModel%NumTensorComponents = 6
     SUBROUTINE SetFiniteElementType( DiscreteModel )
 
@@ -1148,19 +1154,19 @@
         TYPE(Model),INTENT(IN OUT) :: DiscreteModel
 
         DiscreteModel%element="hexahedron"            !tipo de elemento finito ('hexahedron' ou 'tetrahedron').
-        DiscreteModel%NumDimensions = 3               !ndim - n�mero de dimens�es do problema.
-        DiscreteModel%NumNodesPerElement = 8          !nod - n�mero de n�s de deslocamento por elemento.
-        DiscreteModel%NumDOFUperElement = 24          !ndof - n�mero de graus de liberdade de deslocamento por elemento.
-        DiscreteModel%NumDOFPperElement = 8           !nodf - n�mero de n�s com grau de liberdade de poro-press�o (mas ser� usado como constante).
-        DiscreteModel%NumDOFUperNode = 3              !nodof - n�mero de graus de liberdade de deslocamento por n�.
-        DiscreteModel%NumTensorComponents = 6         !nst - n�mero de componentes no tensor de tens�es
+        DiscreteModel%NumDimensions = 3               !ndim - número de dimensões do problema.
+        DiscreteModel%NumNodesPerElement = 8          !nod - número de nós de deslocamento por elemento.
+        DiscreteModel%NumDOFUperElement = 24          !ndof - número de graus de liberdade de deslocamento por elemento.
+        DiscreteModel%NumDOFPperElement = 8           !nodf - número de nós com grau de liberdade de poro-pressão (mas será usado como constante).
+        DiscreteModel%NumDOFUperNode = 3              !nodof - número de graus de liberdade de deslocamento por nó.
+        DiscreteModel%NumTensorComponents = 6         !nst - número de componentes no tensor de tensões
 
         RETURN
     END SUBROUTINE
 
     
     SUBROUTINE BuildDOFmatrix(nels,nod,ndof,g_num,nf,g_g)
-      !Monta matriz de graus de liberdade dos n�s dos elementos.
+      !Monta matriz de graus de liberdade dos nós dos elementos.
 
       USE NumericalUtilities
 
@@ -1171,9 +1177,9 @@
       INTEGER,ALLOCATABLE,INTENT(IN)::g_num(:,:),&  !conectividade dos elementos da malha
                                       nf(:,:)       !matriz de graus de liberdade
       INTEGER,ALLOCATABLE,INTENT(IN OUT)::g_g(:,:)  !matriz com os graus de liberdade por elemento
-      INTEGER,INTENT(IN)::nels,&                    !n�mero de elementos
-                          nod,&                     !n�mero de n�s de deslocamento por elemento
-                          ndof                      !n�mero de graus de liberdade de deslocamento por elemento
+      INTEGER,INTENT(IN)::nels,&                    !número de elementos
+                          nod,&                     !número de nós de deslocamento por elemento
+                          ndof                      !número de graus de liberdade de deslocamento por elemento
 
       INTEGER::iel                                  !contador
       INTEGER,ALLOCATABLE:: num(:),&                !conectividade de um elemento
@@ -1214,8 +1220,8 @@
       REAL(8):: n(3),coordsTRI(3,3),area1,area2,normal1(3),normal2(3),theta
       REAL(8):: stress(6),sxx,syy,sxy,normal,shear
         
-      REAL(8),ALLOCATABLE:: points(:,:),&                 !coordenadas dos pontos de integraÁ„o
-                            weights(:)                    !peso dos pontos de integraÁ„o
+      REAL(8),ALLOCATABLE:: points(:,:),&                 !coordenadas dos pontos de integração
+                            weights(:)                    !peso dos pontos de integração
       REAL(8),ALLOCATABLE:: sigma(:,:)
 
       element = DiscreteModel%element
@@ -1276,13 +1282,13 @@
       INTEGER::i,iel  !contadores
       REAL(8)::det  !determinante do jacobiano
     
-      INTEGER:: nels,&  !n�mero de elementos.
-                nn,&    !n�mero de n�s.
-                ndim,&  !n�mero de dimens�es do problema.
-                nst,&   !n�mero de componentes no tensor de tens�es.
-                nip,&   !n�mero de pontos de integra��o.
-                nod,&   !n�mero de n�s por elemento.
-                ndof,&  !n�mero de graus de liberdade por elemento.
+      INTEGER:: nels,&  !número de elementos.
+                nn,&    !número de nós.
+                ndim,&  !número de dimensões do problema.
+                nst,&   !número de componentes no tensor de tensões.
+                nip,&   !número de pontos de integração.
+                nod,&   !número de nós por elemento.
+                ndof,&  !número de graus de liberdade por elemento.
                 neq
       REAL(8),ALLOCATABLE:: bee(:,:),&  !matriz de derivadas das funções de forma
                             jac(:,:),&  !matriz jacobiana das funções de forma
@@ -1290,10 +1296,10 @@
                             der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais
                             deriv(:,:)  !derivadas das funções de forma dos deslocamentos em coordenadas globais
       REAL(8),ALLOCATABLE:: eld(:),eps(:)
-      REAL(8),ALLOCATABLE:: g_coord(:,:),&  !coordenadas dos n�s da malha.
-                            coord(:,:),&    !coordenada dos n�s de um elemento.
-                            points(:,:),&   !coordenadas dos pontos de integra��o.
-                            weights(:)      !peso dos pontos de integra��o.
+      REAL(8),ALLOCATABLE:: g_coord(:,:),&  !coordenadas dos nós da malha.
+                            coord(:,:),&    !coordenada dos nós de um elemento.
+                            points(:,:),&   !coordenadas dos pontos de integração.
+                            weights(:)      !peso dos pontos de integração.
       REAL(8),ALLOCATABLE:: st(:),&         !delta de tensão 
                             st_elastic(:),& !delta de tensão elástica
                             dee(:,:)        !stress-strain matrix
@@ -1416,23 +1422,23 @@
       INTEGER::i,iel  !contadores
       REAL(8)::det  !determinante do jacobiano
     
-      INTEGER:: nels,&  !n�mero de elementos.
-                nn,&    !n�mero de n�s.
-                ndim,&  !n�mero de dimens�es do problema.
-                nst,&   !n�mero de componentes no tensor de tens�es.
-                nip,&   !n�mero de pontos de integra��o.
-                nod,&   !n�mero de n�s por elemento.
-                ndof,&  !n�mero de graus de liberdade por elemento.
+      INTEGER:: nels,&  !número de elementos.
+                nn,&    !número de nós.
+                ndim,&  !número de dimensões do problema.
+                nst,&   !número de componentes no tensor de tensões.
+                nip,&   !número de pontos de integração.
+                nod,&   !número de nós por elemento.
+                ndof,&  !número de graus de liberdade por elemento.
                 neq
       REAL(8),ALLOCATABLE:: bee(:,:),&  !matriz de derivadas das funções de forma
                             jac(:,:),&  !matriz jacobiana das funções de forma
                             fun(:),&    !funções de forma
                             der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais
                             deriv(:,:)  !derivadas das funções de forma dos deslocamentos em coordenadas globais
-      REAL(8),ALLOCATABLE:: g_coord(:,:),&  !coordenadas dos n�s da malha.
-                            coord(:,:),&    !coordenada dos n�s de um elemento.
-                            points(:,:),&   !coordenadas dos pontos de integra��o.
-                            weights(:)      !peso dos pontos de integra��o.
+      REAL(8),ALLOCATABLE:: g_coord(:,:),&  !coordenadas dos nós da malha.
+                            coord(:,:),&    !coordenada dos nós de um elemento.
+                            points(:,:),&   !coordenadas dos pontos de integração.
+                            weights(:)      !peso dos pontos de integração.
       REAL(8),ALLOCATABLE:: stress(:)       !delta de tensão 
       INTEGER,ALLOCATABLE:: g(:),&  !vetor com graus de liberdade de um elemento.
                             num(:)  !conectividade de um elemento.

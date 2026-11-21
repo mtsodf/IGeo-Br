@@ -29,8 +29,8 @@
     
       !VARIABLE.
       INTEGER:: iel                         !contadores.                                                                   
-      REAL(8),ALLOCATABLE:: points(:,:),&   !coordenadas dos pontos de integraÁ„o
-                            weights(:),&    !peso dos pontos de integraÁ„o
+      REAL(8),ALLOCATABLE:: points(:,:),&   !coordenadas dos pontos de integração
+                            weights(:),&    !peso dos pontos de integração
                             fun(:)
       
       ALLOCATE( points(nip,ndim),weights(nip),fun(nod) )
@@ -504,15 +504,15 @@
     !*****************************************************************************
 
 
-    !Rotina para c�lculo da matriz B de um elemento triangular linear 2D (3 n�s / 6 deslocamentos)
+    !Rotina para cálculo da matriz B de um elemento triangular linear 2D (3 nós / 6 deslocamentos)
     FUNCTION Bmatrix_2DDtrianguleFE(Coords)
 
         IMPLICIT NONE
-        REAL(8):: Coords(3,2)   !(n�, coordenadas(3) ).
+        REAL(8):: Coords(3,2)   !(nó, coordenadas(3) ).
         REAL(8):: Bmatrix_2DDtrianguleFE(3,6)
         REAL(8):: b1,b2,b3,c1,c2,c3
 
-        !C�lculo dos coeficientes.
+        !Cálculo dos coeficientes.
         b1=Coords(2,2)-Coords(3,2)   !y2-y3;
         b2=Coords(3,2)-Coords(1,2)   !y3-y1;
         b3=Coords(1,2)-Coords(2,2)   !y1-y2;
@@ -520,7 +520,7 @@
         c2=Coords(1,1)-Coords(3,1)   !x1-x3;
         c3=Coords(2,1)-Coords(1,1)   !x2-x1;
 
-        !C�lculo da matriz B sem dividir por 2*Area.
+        !Cálculo da matriz B sem dividir por 2*Area.
         Bmatrix_2DDtrianguleFE = 0.0
         !1a linha.
         Bmatrix_2DDtrianguleFE(1,1) = b1
@@ -992,16 +992,16 @@
     END SUBROUTINE GaussPoints
 
 
-    !Rotina para c�lculo do valor fun��o de forma.
+    !Rotina para cálculo do valor função de forma.
     !Smith & Griffiths 2004.
     SUBROUTINE shape_function(fun,points,i)
 
         ! This subroutine computes the values of the shape functions.
         ! to local coordinates.
 
-        ! points(:,:) - coordenadas naturais dos pontos de integra��o
-        ! i - n�mero do ponto de integra��o
-        ! fun(:) - retorna as fun��es de forma no ponto de integra��o i
+        ! points(:,:) - coordenadas naturais dos pontos de integração
+        ! i - número do ponto de integração
+        ! fun(:) - retorna as funções de forma no ponto de integração i
 
         IMPLICIT NONE
         INTEGER,INTENT(in)::i
@@ -1159,7 +1159,7 @@
                             pt125*xip*etam*zetap,pt125*xip*etam*zetam,                     &
                             pt125*xim*etap*zetam,pt125*xim*etap*zetap,                     &
                             pt125*xip*etap*zetap,pt125*xip*etap*zetam/)
-                    CASE(10)!ELEMENTO TETRA�DRICO QUADR�TICO--------------------------------
+                    CASE(10)!ELEMENTO TETRAÉDRICO QUADRÁTICO--------------------------------
                         L1=points(i,1);L2=points(i,2);L3=points(i,3);L4=one-L1-L2-L3
                         fun(1) = (2*L1-1)*L1
                         fun(2) = (2*L2-1)*L2
@@ -1225,7 +1225,7 @@
     END SUBROUTINE shape_function
 
 
-    !Rotina para c�lculo da derivada da fun��o de forma.
+    !Rotina para cálculo da derivada da função de forma.
     !Smith & Griffiths 2004.
     SUBROUTINE shape_functionDerivative(der,points,i)
 
@@ -1487,7 +1487,7 @@
                         der(3,6)= pt125*xim*etap
                         der(3,7)= pt125*xip*etap
                         der(3,8)=-pt125*xip*etap
-                    CASE(10)!ELEMENTO TETRA�DRICO QUADR�TICO--------------------------------
+                    CASE(10)!ELEMENTO TETRAÉDRICO QUADRÁTICO--------------------------------
                         L1=points(i,1);L2=points(i,2);L3=points(i,3);L4=one-L1-L2-L3
                         der(1,1)=two*L1+(two*L1-one)
                         der(1,2)=zero
@@ -1628,24 +1628,24 @@
     END SUBROUTINE shape_functionDerivative
 
 
-    !ROTINA PARA C�LCULO DE VOLUME BULK DE UM ELEMENTO.
+    !ROTINA PARA CÁLCULO DE VOLUME BULK DE UM ELEMENTO.
     FUNCTION ElementVolume(num, coord, nip, points, weights)
 
         IMPLICIT NONE
 
         INTEGER,INTENT(IN)::  num(:)        !conectividade de um elemento.
-        REAL(8),INTENT(IN)::  points(:,:),& !coordenadas dos pontos de integra��o
-            weights(:),&  !peso dos pontos de integra��o
-            coord(:,:)    !coordenada dos n�s de um elemento.
+        REAL(8),INTENT(IN)::  points(:,:),& !coordenadas dos pontos de integração
+            weights(:),&  !peso dos pontos de integração
+            coord(:,:)    !coordenada dos nós de um elemento.
         INTEGER,INTENT(IN)::  nip
         REAL(8):: ElementVolume
 
         INTEGER:: i, nod
 
-        REAL(8),ALLOCATABLE:: fun(:),&      !fun��es de forma.
-            jac(:,:),&    !matriz jacobiana das fun��es de forma
-            der(:,:),&    !derivadas das fun��es de forma dos deslocamentos em coordenadas naturais
-            deriv(:,:)    !derivadas das fun��es de forma dos deslocamentos em coordenadas globais
+        REAL(8),ALLOCATABLE:: fun(:),&      !funções de forma.
+            jac(:,:),&    !matriz jacobiana das funções de forma
+            der(:,:),&    !derivadas das funções de forma dos deslocamentos em coordenadas naturais
+            deriv(:,:)    !derivadas das funções de forma dos deslocamentos em coordenadas globais
 
         REAL(8):: det                       !determinante do jacobiano.
 
@@ -1653,15 +1653,15 @@
         ALLOCATE(fun(nod),jac(3,3),der(3,nod),deriv(3,nod))
 
 
-        !Integra��o num�rica.
+        !Integração numérica.
         ElementVolume = 0.0
         DO i = 1 , nip
-            CALL shape_function(fun,points,i)             !fun��es de forma no ponto de integra��o i
-            CALL shape_functionDerivative(der,points,i)   !derivada das fun��es de forma
-            jac = MATMUL(der,coord)                       !jacobiano do elemento no ponto de integra��o i
+            CALL shape_function(fun,points,i)             !funções de forma no ponto de integração i
+            CALL shape_functionDerivative(der,points,i)   !derivada das funções de forma
+            jac = MATMUL(der,coord)                       !jacobiano do elemento no ponto de integração i
             CALL MatrixDeterminant(jac,det)               !determinante do jacobiano
             CALL InvertMatrix(jac)                        !inverso do jacobiano
-            deriv = MATMUL(jac,der)                       !derivadas das fun��es de forma em coordenadas reais
+            deriv = MATMUL(jac,der)                       !derivadas das funções de forma em coordenadas reais
             ElementVolume = ElementVolume + det * weights(i)  !Vol=Vol+det(J)*peso
         END DO
 

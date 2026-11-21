@@ -1,4 +1,4 @@
-﻿
+
     !*****************************************************************************
     !COMPUTATIONAL GEOMECHANICS
     !Eng. Luis Carlos de Sousa Junior
@@ -30,8 +30,8 @@
 
         REAL(8),ALLOCATABLE:: NodalPoreCompressbility(:)
 
-        LOGICAL:: RAD,&
-                  HorWellFlag                     !BOX MODEL AND HORIZONTAL WELL (X DIR)
+        LOGICAL:: RAD = .FALSE.,&
+                  HorWellFlag = .FALSE.                     !BOX MODEL AND HORIZONTAL WELL (X DIR)
         
         !Active to flow list.
         INTEGER,ALLOCATABLE:: ActiveToFlowConections(:)
@@ -85,7 +85,7 @@
         INTEGER,ALLOCATABLE:: ia(:),ja(:)
         
         !Fracture Unbalanced Volume
-        LOGICAL:: FracUnbalVolume
+        LOGICAL:: FracUnbalVolume = .FALSE.
         
         !Permeability damage/stimulation
         REAL(8),ALLOCATABLE:: OriginalPerm(:,:)             !(1,:) - KH  , (2,:) - KH
@@ -93,7 +93,7 @@
         REAL(8),ALLOCATABLE:: InjectionDamageModel(:,:)     !for each layer, contains time and perm. multiplier for injection damage model.
 
         !Pipe model
-        LOGICAL:: ContainsPipeModel
+        LOGICAL:: ContainsPipeModel = .FALSE.
         TYPE(PipeModel):: Pipe
         
     END TYPE
@@ -884,7 +884,7 @@
         isTable = .FALSE.
         IF( SIZE(WellData%InjPressureTable(1,:))>0 ) isTable = .TRUE.
 
-        IF( FlowModel%RAD == .TRUE. .AND. Step>0 )THEN
+        IF( FlowModel%RAD .AND. Step>0 )THEN
             !RADIAL MODEL / VERTICAL WELL -------------------------------------------------------------
             DO i=1,numNodes
                 radius = SQRT(GeomechanicalModel%X(i)**2.0+GeomechanicalModel%Y(i)**2.0)
@@ -910,7 +910,7 @@
                     END IF
                 END IF
             END DO
-        ELSEIF( FlowModel%HorWellFlag == .TRUE.)THEN
+        ELSEIF( FlowModel%HorWellFlag)THEN
             !BOX MODEL / HORIZONTAL WELL --------------------------------------------------------------
             DO i = 1,numNodes
                 IF(WellData%WellBoreWallFlag(i))THEN
@@ -1044,7 +1044,7 @@
         numNodes = GeomechanicalModel%NumNodes
 
         !r0 = GeomechanicalModel%X(1)
-        IF( FlowModel%RAD == .TRUE. )THEN
+        IF( FlowModel%RAD )THEN
             !RADIAL MODEL / VERTICAL WELL -------------------------------------------------------------
             DO i=1,numNodes
                 radius = SQRT(GeomechanicalModel%X(i)**2.0+GeomechanicalModel%Y(i)**2.0)
@@ -1055,7 +1055,7 @@
                     FlowModel%InjNode(i) = .TRUE.
                 END IF
             END DO
-        ELSEIF( FlowModel%HorWellFlag == .TRUE.)THEN
+        ELSEIF( FlowModel%HorWellFlag)THEN
             !BOX MODEL / HORIZONTAL WELL --------------------------------------------------------------
             DO i = 1,numNodes
                 IF(WellData%WellBoreWallFlag(i))THEN
@@ -1108,7 +1108,7 @@
 
                         h = GeomechanicalModel%Z(num(2))-GeomechanicalModel%Z(num(1))
                         DO i=1,8
-                            IF(FlowModel%InjNode(num(i)) == .TRUE.)THEN
+                            IF(FlowModel%InjNode(num(i)))THEN
                                 nodePerm(num(i)) = nodePerm(num(i)) + GeomechanicalModel%Kh(iel) * h
                                 sumK = sumK + GeomechanicalModel%Kh(iel) * h
                             END IF
@@ -1156,7 +1156,7 @@
         numNodes = SIZE(FlowModel%NodeDepth(:))
 
         !LIST OF NODES AND ELEMENTS.
-        IF( FlowModel%RAD == .TRUE. )THEN
+        IF( FlowModel%RAD )THEN
             !RADIAL MODEL / VERTICAL WELL -------------------------------------------------------------
             DO i=1,numNodes
                 radius = SQRT(GeomechanicalModel%X(i)**2.0+GeomechanicalModel%Y(i)**2.0)
@@ -1171,7 +1171,7 @@
                     (WellData%InjPressureTable(3,Stage)-GeomechanicalModel%Z(i))
                 END IF
             END DO
-        ELSEIF( FlowModel%HorWellFlag == .TRUE.)THEN
+        ELSEIF( FlowModel%HorWellFlag)THEN
             !BOX MODEL / HORIZONTAL WELL --------------------------------------------------------------
             DO i = 1,numNodes
                 IF(WellData%WellBoreWallFlag(i))THEN
@@ -1505,8 +1505,8 @@
         REAL(8):: det
         REAL(8),ALLOCATABLE:: g_coord(:,:),&    !nodal coordenates.
         coord(:,:)        !element nodal coordenates.
-        REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integra��o.
-        weights(:)        !peso dos pontos de integra��o.
+        REAL(8),ALLOCATABLE:: points(:,:),&     !coordenadas dos pontos de integração.
+        weights(:)        !peso dos pontos de integração.
         REAL(8),ALLOCATABLE:: jac(:,:),der(:,:),deriv(:,:)
 
         REAL(8):: elemVOL
@@ -2212,7 +2212,7 @@
 
         neq = SIZE(ia)-1
 
-        IF(SIZE(diag_precon)==0)ALLOCATE(diag_precon(0:neq))
+        IF(.NOT.ALLOCATED(diag_precon))ALLOCATE(diag_precon(0:neq))
         !!dir$ loop count min(512)
         diag_precon = 0.0
 

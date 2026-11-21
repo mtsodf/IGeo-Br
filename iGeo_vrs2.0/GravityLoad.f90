@@ -1,4 +1,4 @@
-﻿
+
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
@@ -29,12 +29,12 @@
         INTEGER,PARAMETER::iwp=SELECTED_REAL_KIND(15)
         INTEGER:: iel,i,j  !contadores.
 
-        INTEGER:: ndim,&  !dimensıes do problema
-                  nst,&  !n˙mero de componentes no tensor de tensıes
-                  nn,&  !n˙mero de nÛs
-                  nels,&  !n˙mero de elementos
-                  nip,&  !n˙mero de pontos de integraÁ„o
-                  nod,&  !n˙mero de nÛs por elemento.
+        INTEGER:: ndim,&  !dimensões do problema
+                  nst,&  !número de componentes no tensor de tensões
+                  nn,&  !número de nós
+                  nels,&  !número de elementos
+                  nip,&  !número de pontos de integração
+                  nod,&  !número de nós por elemento.
                   ndof
         REAL(iwp):: zero=0.0_iwp,&
                     det,&  !MatrixDeterminant do jacobiano
@@ -43,18 +43,18 @@
         CHARACTER(LEN=320)::element
         REAL(iwp):: unitWeight, grav=9.81
 
-        !VARI¡VEIS DIN¬MICAS
+        !VARIÁVEIS DINÂMICAS
         INTEGER,ALLOCATABLE:: num(:) ,&  !conectividade de um elemento.
                               g(:)  !vetor com os graus de liberdade de cada elemento.
-        REAL(iwp),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integraÁ„o
-                                weights(:),&  !peso dos pontos de integraÁ„o
-                                coord(:,:),&  !coordenada dos nÛs de um elemento
-                                fun(:),&  !funÁıes de forma
-                                der(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas naturais
-                                deriv(:,:),&  !derivadas das funÁıes de forma dos deslocamentos em coordenadas globais
-                                jac(:,:),&  !matriz jacobiana das funÁıes de forma
-                                g_coord(:,:),&  !coordenada dos nÛs da malha
-                                bee(:,:),&  !matriz de derivadas das funÁıes de forma,
+        REAL(iwp),ALLOCATABLE:: points(:,:),&  !coordenadas dos pontos de integração
+                                weights(:),&  !peso dos pontos de integração
+                                coord(:,:),&  !coordenada dos nós de um elemento
+                                fun(:),&  !funções de forma
+                                der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais
+                                deriv(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas globais
+                                jac(:,:),&  !matriz jacobiana das funções de forma
+                                g_coord(:,:),&  !coordenada dos nós da malha
+                                bee(:,:),&  !matriz de derivadas das funções de forma,
                                 elemNodalForce(:)
 
         element = GeomechanicalModel%element
@@ -204,9 +204,9 @@
     !                         fun(:),&  !funções de forma
     !                         der(:,:),&  !derivadas das funções de forma dos deslocamentos em coordenadas naturais
     !                         deriv(:,:)  !derivadas das funções de forma dos deslocamentos em coordenadas globais
-    !    INTEGER:: ndim = 3,&  !dimensıes do problema
-    !              nst = 6,&   !n˙mero de componentes no tensor de tensıes
-    !              nod = 8,&   !n˙mero de nÛs por elemento.
+    !    INTEGER:: ndim = 3,&  !dimensões do problema
+    !              nst = 6,&   !número de componentes no tensor de tensões
+    !              nod = 8,&   !número de nós por elemento.
     !              nodof=3,&   !number of dofs per node.
     !              ndof = 24   !number of element  dofs.
     !    

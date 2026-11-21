@@ -2,7 +2,7 @@
   !*****************************************************************************
   !COMPUTATIONAL GEOMECHANICS
   !Eng. Luis Carlos de Sousa Junior
-  !Programa de Pos-graduaÁ„o em Geotecnia.
+  !Programa de Pos-gradua√ß√£o em Geotecnia.
   !University of Brasilia
 
 
@@ -11,10 +11,10 @@
   MODULE ViscoplasticExplicitySolver                      
   
     TYPE:: TensorContainer
-      REAL(8),ALLOCATABLE:: tensor18a(:,:,:),&  !(18)  sigma - incremento de tens„o do passo de carga atual.
-                            tensor18b(:,:,:),&  !(18)  eps - termos do tensor de deformaÁıes totais (el·stica + pl·stica).
-                            tensor18c(:,:,:),&  !(18)  evpt + tensor_dpl - deformaÁ„o pl·stica acumulada total (est·gio de carregamento atual + est·gio anterior).
-                            tensor19(:,:,:)     !(19)  evpt - deformaÁ„o pl·stica total.
+      REAL(8),ALLOCATABLE:: tensor18a(:,:,:),&  !(18)  sigma - incremento de tens√£o do passo de carga atual.
+                            tensor18b(:,:,:),&  !(18)  eps - termos do tensor de deforma√ß√µes totais (el√°stica + pl√°stica).
+                            tensor18c(:,:,:),&  !(18)  evpt + tensor_dpl - deforma√ß√£o pl√°stica acumulada total (est√°gio de carregamento atual + est√°gio anterior).
+                            tensor19(:,:,:)     !(19)  evpt - deforma√ß√£o pl√°stica total.
     END TYPE
     
     TYPE:: ViscoSolverParameters
@@ -47,45 +47,45 @@
       TYPE(Model),INTENT(IN OUT):: GeomechanicalModel
       TYPE(StepReport),INTENT(IN OUT):: ReportData
       REAL(8),INTENT(IN OUT):: Matrix_a(:)
-      INTEGER,INTENT(IN OUT):: Matrix_ia(:), Matrix_ja(:) !ponteiros que armazenam as posiÁıes dos dofs na matriz.
+      INTEGER,INTENT(IN OUT):: Matrix_ia(:), Matrix_ja(:) !ponteiros que armazenam as posi√ß√µes dos dofs na matriz.
       INTEGER,INTENT(IN OUT):: RestrictedDOFs(0:)
       REAL(8),INTENT(IN OUT):: Displacement(0:),Pnode(:)
       REAL(8),INTENT(IN):: DeltaT(:)
-      REAL(8),INTENT(IN)::cg_tol,&                        !toler‚ncia do solver linear de equaÁıes - raz„o de m·ximos deslocamentos
-                          tol                             !toler‚ncia do solver viscopl·stico - raz„o de m·ximas forÁas desbalanceadas
-      INTEGER,INTENT(IN)::limit,&                         !limite de iteraÁıes para o solver viscopl·stico
-                          cg_limit                        !limete de iteraÁıes para o solver linear de equaÁıes
+      REAL(8),INTENT(IN)::cg_tol,&                        !toler√¢ncia do solver linear de equa√ß√µes - raz√£o de m√°ximos deslocamentos
+                          tol                             !toler√¢ncia do solver viscopl√°stico - raz√£o de m√°ximas for√ßas desbalanceadas
+      INTEGER,INTENT(IN)::limit,&                         !limite de itera√ß√µes para o solver viscopl√°stico
+                          cg_limit                        !limete de itera√ß√µes para o solver linear de equa√ß√µes
                           
       INTEGER:: iel,&
-                iters,&                                   !contador das iteraÁıes pl·sticas
-                fracIters                                 !contador das iteraÁıes de propagaÁ„o de fraturas.
+                iters,&                                   !contador das itera√ß√µes pl√°sticas
+                fracIters                                 !contador das itera√ß√µes de propaga√ß√£o de fraturas.
       INTEGER:: i,j
-      INTEGER::ndim,&                                     !n˙mero de dimensıes
-               nels,&                                     !n˙mero de elementos na malha
-               nn,&                                       !n˙mero de nÛs na malha
-               nod,&                                      !n˙mero de nÛs de deslocamento por elemento (=8 para hexaÈdro linear)
-               nip,&                                      !n˙mero de pontos de integraÁ„o
-               ndof,&                                     !n˙mero de graus de liberdade de deslocamento por elemento
-               nst,&                                      !n˙mero de componentes de tens„o no tensor de tensıes (=6 para 3D)
-               neq                                        !n˙mero de equaÁıes no sistema
-      REAL(8):: fmax,&                                    !funÁ„o de escoamento do modelo de Mohr-Coulomb e CAP
-                factor,&                                  !factor para correlaÁ„o do passo de tempo
-                dt=1.0e15,&                               !pseudo-passo de tempo do solver viscopl·stico
-                convergence                               !convergÍncia
-      LOGICAL::converged                                  !flag de convergÍncia do solver viscopl·stico
+      INTEGER::ndim,&                                     !n√∫mero de dimens√µes
+               nels,&                                     !n√∫mero de elementos na malha
+               nn,&                                       !n√∫mero de n√≥s na malha
+               nod,&                                      !n√∫mero de n√≥s de deslocamento por elemento (=8 para hexa√©dro linear)
+               nip,&                                      !n√∫mero de pontos de integra√ß√£o
+               ndof,&                                     !n√∫mero de graus de liberdade de deslocamento por elemento
+               nst,&                                      !n√∫mero de componentes de tens√£o no tensor de tens√µes (=6 para 3D)
+               neq                                        !n√∫mero de equa√ß√µes no sistema
+      REAL(8):: fmax,&                                    !fun√ß√£o de escoamento do modelo de Mohr-Coulomb e CAP
+                factor,&                                  !factor para correla√ß√£o do passo de tempo
+                dt=1.0e15,&                               !pseudo-passo de tempo do solver viscopl√°stico
+                convergence                               !converg√™ncia
+      LOGICAL::converged                                  !flag de converg√™ncia do solver viscopl√°stico
   
-      !Vari·veis din‚micas
-      REAL(8),ALLOCATABLE:: points(:,:),&                 !coordenadas dos pontos de integraÁ„o
-                            weights(:),&                  !peso dos pontos de integraÁ„o
-                            g_coord(:,:),&                !coordenada dos nÛs
-                            bdylds(:),&                   !cargas nodais desbalanceadas do solver viscopl·stico
-                            oldis(:),&                    !guarda os deslocamentos da iteraÁ„o anterior
-                            tensor_d(:,:),&               !tensor de deformaÁıes totais do est·gio de carregamento anterior anterior
-                            x(:)                          !soluÁ„o do sistema de equaÁıes
+      !Vari√°veis din√¢micas
+      REAL(8),ALLOCATABLE:: points(:,:),&                 !coordenadas dos pontos de integra√ß√£o
+                            weights(:),&                  !peso dos pontos de integra√ß√£o
+                            g_coord(:,:),&                !coordenada dos n√≥s
+                            bdylds(:),&                   !cargas nodais desbalanceadas do solver viscopl√°stico
+                            oldis(:),&                    !guarda os deslocamentos da itera√ß√£o anterior
+                            tensor_d(:,:),&               !tensor de deforma√ß√µes totais do est√°gio de carregamento anterior anterior
+                            x(:)                          !solu√ß√£o do sistema de equa√ß√µes
       REAL(8),ALLOCATABLE:: loads(:)                      !carregamento e deslocamentos (OUT)
       
-      REAL(8),ALLOCATABLE:: evpt(:,:),&                   !deformaÁ„o pl·stica acumulada
-                            tensor_dpl(:,:)               !tensor de deformaÁıes pl·sticas do est·gio de carregamento anterior anterior
+      REAL(8),ALLOCATABLE:: evpt(:,:),&                   !deforma√ß√£o pl√°stica acumulada
+                            tensor_dpl(:,:)               !tensor de deforma√ß√µes pl√°sticas do est√°gio de carregamento anterior anterior
       
       REAL(8),ALLOCATABLE:: diag_precon(:)
       
@@ -171,17 +171,17 @@
         !>>>Initial viscoplastic time step.
         CALL ViscoPlasTimeStep(GeomechanicalModel,dt)
       
-        !acumulando carga estrutural: carga externa + carga viscopl·stica
+        !acumulando carga estrutural: carga externa + carga viscopl√°stica
         loads(1:) = Pnode + bdylds(1:)
     
-        !	SoluÁ„o do Sistema Linear de EquaÁıes.(*)
+        !	Solu√ß√£o do Sistema Linear de Equa√ß√µes.(*)
         IF(MAXVAL(ABS(loads(1:)))>0.0)THEN
       
           !LINEAR SOLVER--------------------------------------------------------
           ! [A]*{x}={loads}
           !   [A] -> a,ia,ja :matriz de rigidez no formato CSR
-          !   {loads} -> carga estrutural do passo de carregamento (Pnode) mais a carga elastopl·stica desbalanceada (bdylds)
-          !   {x} -> soluÁ„o, escrita no vetor "loads"
+          !   {loads} -> carga estrutural do passo de carregamento (Pnode) mais a carga elastopl√°stica desbalanceada (bdylds)
+          !   {x} -> solu√ß√£o, escrita no vetor "loads"
           !Initial guess -> oldis.
           CALL PCG( cg_limit,&
                     neq,&
@@ -190,7 +190,7 @@
                     Matrix_a,Matrix_ia,Matrix_ja,&
                     loads,&
                     oldis(1:neq),RestrictedDOFs(1:RestrictedDOFs(0)),&
-                    GeomechanicalModel%NumPartitions,reportData%linIters)                          !solver linear iterativo PCG para matriz simÈtrica.
+                    GeomechanicalModel%NumPartitions,reportData%linIters)                          !solver linear iterativo PCG para matriz sim√©trica.
           loads(0) = 0
         ELSE
           loads = 0.0                                                          !zero displacements.
@@ -225,7 +225,7 @@
         !SAVING TENSORS---------------------------------------------------------
         DO iel=1,GeomechanicalModel%NumElements
           !READ(17)tensor_dpl;READ(18)sigma; READ(18)eps; READ(18)evpt
-          !WRITE(19)evpt-tensor_dpl  !evpt - deformaÁ„o pl·stica acumulada nas iteraÁıes atuais / tensor_dpl - deformaÁ„o pl·stica acumulada total (todos os passos de carga)
+          !WRITE(19)evpt-tensor_dpl  !evpt - deforma√ß√£o pl√°stica acumulada nas itera√ß√µes atuais / tensor_dpl - deforma√ß√£o pl√°stica acumulada total (todos os passos de carga)
           tensor_dpl = GeomechanicalModel%PlasticStrainTensor(:,:,iel)
           evpt = Container%tensor18c(:,:,iel)
           Container%tensor19(:,:,iel) = evpt - tensor_dpl
@@ -300,82 +300,82 @@
       IMPLICIT NONE
   
       !******************************************
-      !VARI¡VEIS
+      !VARI√ÅVEIS
       !******************************************
       
       !Input.
       TYPE(Model),INTENT(IN OUT):: GeomechanicalModel
-      INTEGER,INTENT(IN)::ndim,&  !n˙mero de dimensıes
-                          nels,&  !n˙mero de elementos na malha
-                          nod,&  !n˙mero de nÛs de deslocamento por elemento (=8 para hexaÈdro linear)
-                          nip,&  !n˙mero de pontos de integraÁ„o
-                          ndof,&  !n˙mero de graus de liberdade de deslocamento por elemento
-                          nst,&  !n˙mero de componentes de tens„o no tensor de tensıes (=6 para 3D)
-                          iters,limit  !contador das iteraÁıes pl·sticase e limite de iteraÁıes para o solver viscopl·stico  
-      REAL(8),INTENT(IN OUT):: dt  !pseudo-passo de tempo do solver viscopl·stico
-      REAL(8),INTENT(OUT):: factor  !factor para correlaÁ„o do passo de tempo
-      REAL(8),INTENT(IN OUT):: fmax  !m·xima funÁ„o de escoamento do modelo de Mohr-Coulomb
+      INTEGER,INTENT(IN)::ndim,&  !n√∫mero de dimens√µes
+                          nels,&  !n√∫mero de elementos na malha
+                          nod,&  !n√∫mero de n√≥s de deslocamento por elemento (=8 para hexa√©dro linear)
+                          nip,&  !n√∫mero de pontos de integra√ß√£o
+                          ndof,&  !n√∫mero de graus de liberdade de deslocamento por elemento
+                          nst,&  !n√∫mero de componentes de tens√£o no tensor de tens√µes (=6 para 3D)
+                          iters,limit  !contador das itera√ß√µes pl√°sticase e limite de itera√ß√µes para o solver viscopl√°stico  
+      REAL(8),INTENT(IN OUT):: dt  !pseudo-passo de tempo do solver viscopl√°stico
+      REAL(8),INTENT(OUT):: factor  !factor para correla√ß√£o do passo de tempo
+      REAL(8),INTENT(IN OUT):: fmax  !m√°xima fun√ß√£o de escoamento do modelo de Mohr-Coulomb
       INTEGER,ALLOCATABLE,INTENT(IN):: g_num(:,:),&  !conectividade dos elementos
-                                       g_g(:,:)  !matriz para identificaÁ„o dos graus de liberdades dos nÛs
-      REAL(8),ALLOCATABLE,INTENT(IN):: points(:,:),&  !coordenadas dos pontos de integraÁ„o
-                                       weights(:),&  !peso dos pontos de integraÁ„o
-                                       g_coord(:,:),&  !coordenada dos nÛs
+                                       g_g(:,:)  !matriz para identifica√ß√£o dos graus de liberdades dos n√≥s
+      REAL(8),ALLOCATABLE,INTENT(IN):: points(:,:),&  !coordenadas dos pontos de integra√ß√£o
+                                       weights(:),&  !peso dos pontos de integra√ß√£o
+                                       g_coord(:,:),&  !coordenada dos n√≥s
                                        loads(:)  !deslocamentos nodais
       REAL(8),INTENT(IN):: DeltaT(:)
-      REAL(8),ALLOCATABLE,INTENT(IN OUT):: bdylds(:)  !cargas nodais viscopl·stiacas (desbalanceadas) do solver viscopl·stico.
+      REAL(8),ALLOCATABLE,INTENT(IN OUT):: bdylds(:)  !cargas nodais viscopl√°stiacas (desbalanceadas) do solver viscopl√°stico.
       TYPE(TensorContainer),INTENT(IN OUT):: Container
       
-      !Vari·veis est·ticas.
+      !Vari√°veis est√°ticas.
       INTEGER:: iel,i  !contadores
-      REAL(8):: f,&  !funÁ„o de escoamento do modelo de Mohr-Coulomb e CAP
-                defVOL,&  !deformaÁ„o volumÈtrica
+      REAL(8):: f,&  !fun√ß√£o de escoamento do modelo de Mohr-Coulomb e CAP
+                defVOL,&  !deforma√ß√£o volum√©trica
                 evol_vp,& !viscoplastic volumetric strain.
                 e,v,&  !young e poisson
                 ST,&  !traction strength
-                eterm(6),&  !deformaÁ„o de origem tÈrmica
+                eterm(6),&  !deforma√ß√£o de origem t√©rmica
                 det,&  !determinante de matriz
                 prop(23),&  !vetor para leitura de propriedades do elemento do arquivo .prp
-                Ea,Ec,niac,niab,&  !par‚metros do modelo ortotrÛpico (ver interface no mÛdulo MODULE iMaterials)
+                Ea,Ec,niac,niab,&  !par√¢metros do modelo ortotr√≥pico (ver interface no m√≥dulo MODULE iMaterials)
                 ddt,new_dt,&   !passo de tempo.
                 zero=0.0,&
                 pi=ACOS(-1.)
       REAL(8):: biotCoef, Kf
-      REAL(8):: sigm, dsbar, theta  !invariantes de tens„o.
-      REAL(8):: f_cc,&    !funÁ„o de escoamento do Cam-Clay.
-                fator_cc  !factor para retorno de tensıes para o envelope do CAM-CLAY.
-      LOGICAL:: converged,&  !flag de convergÍncia do solver viscopl·stico
-                termo,&  !identifica se È uma simulaÁ„o com esforÁo tÈrmico (cart„o #TERMO no arquivo base)
-                anisotropia,&  !identificador para modelo transversalmente isotrÛpico
+      REAL(8):: sigm, dsbar, theta  !invariantes de tens√£o.
+      REAL(8):: f_cc,&    !fun√ß√£o de escoamento do Cam-Clay.
+                fator_cc  !factor para retorno de tens√µes para o envelope do CAM-CLAY.
+      LOGICAL:: converged,&  !flag de converg√™ncia do solver viscopl√°stico
+                termo,&  !identifica se √© uma simula√ß√£o com esfor√ßo t√©rmico (cart√£o #TERMO no arquivo base)
+                anisotropia,&  !identificador para modelo transversalmente isotr√≥pico
                 found,&  !auxiliar
-                update_dt !flag para atualizaÁ„o do passo de tempo crÌtico. 
+                update_dt !flag para atualiza√ß√£o do passo de tempo cr√≠tico. 
   
-      !Vari·veis din‚micas.
+      !Vari√°veis din√¢micas.
       INTEGER,ALLOCATABLE:: num(:) ,&                     !conectividade de um elemento
                             g(:)                          !vetor com os graus de liberdade de cada elemento
-      REAL(8),ALLOCATABLE:: coord(:,:),&                  !coordenada dos nÛs de um elemento
-                            jac(:,:),&                    !matriz jacobiana das funÁıes de forma.
-                            der(:,:),&                    !derivadas das funÁıes de forma dos deslocamentos em coordenadas naturais.                        
-                            deriv(:,:),&                  !derivadas das funÁıes de forma com relaÁ„o ‡s coordenadas locais e globais
-                            bload(:),&                    !cargas nodais desbalanceadas do solver viscopl·stico para um elemento
-                            bee(:,:),&                    !matriz de derivadas das funÁıes de forma
-                            dee(:,:),&                    !matriz de relaÁıes el·sticas
-                            devp(:),&                     !pseudo-tensıes el·sticas devido a deformaÁ„o pl·stica (=D*delta_evp)
+      REAL(8),ALLOCATABLE:: coord(:,:),&                  !coordenada dos n√≥s de um elemento
+                            jac(:,:),&                    !matriz jacobiana das fun√ß√µes de forma.
+                            der(:,:),&                    !derivadas das fun√ß√µes de forma dos deslocamentos em coordenadas naturais.                        
+                            deriv(:,:),&                  !derivadas das fun√ß√µes de forma com rela√ß√£o √†s coordenadas locais e globais
+                            bload(:),&                    !cargas nodais desbalanceadas do solver viscopl√°stico para um elemento
+                            bee(:,:),&                    !matriz de derivadas das fun√ß√µes de forma
+                            dee(:,:),&                    !matriz de rela√ß√µes el√°sticas
+                            devp(:),&                     !pseudo-tens√µes el√°sticas devido a deforma√ß√£o pl√°stica (=D*delta_evp)
                             deltaSyy(:),&                 !unbalanced YY stress due traction criteria
                             eld(:),&                      !deslocamentos nodais de um elemento
-                            eload(:),&                    !contribuiÁ„o de um ponto de integraÁ„o para o vetor global bload
-                            erate(:),&                    !taxa de deformaÁ„o pl·stiva
-                            evp(:),&                      !incremento de deformaÁ„o pl·stica
-                            evpt(:,:),&                   !deformaÁ„o pl·stica acumulada
-                            eps(:,:),&                    !termos do tensor de deformaÁıes totais (el·stica + pl·stica)
-                            sigma(:,:),&                  !incremento do tensor de tensıes
-                            tensor_s(:,:),&               !tensor de tensıes do est·gio de carregamento anterior
-                            tensor_dpl(:,:),&             !tensor de deformaÁıes pl·sticas do est·gio de carregamento anterior anterior
-                            tensor_d(:,:),&               !tensor de deformaÁıes totais do est·gio de carregamento anterior anterior
-                            anisotropia_Ec(:),&           !vetor de anisotropia Ec (=Ec/Ea), onde Ea est· no arquivo .prp.
-                            anisotropia_niac(:),&         !vetor de anisotropia niab (=niab/niac), onde niac est· no arquivo .prp.
-                            shearDamageArray(:,:),&       !matriz de 2 coluna para dano da resistÍncia ao cisalhamento nos elementos.
-                            elasticDamageArray(:)         !vetor de dano ao mÛdulo de elasticidade.
-      REAL(8),ALLOCATABLE:: viscoLoad(:)                  !carga viscopl·stica (prÈvio a multiplicaÁ„o pelo passo de tempo).
+                            eload(:),&                    !contribui√ß√£o de um ponto de integra√ß√£o para o vetor global bload
+                            erate(:),&                    !taxa de deforma√ß√£o pl√°stiva
+                            evp(:),&                      !incremento de deforma√ß√£o pl√°stica
+                            evpt(:,:),&                   !deforma√ß√£o pl√°stica acumulada
+                            eps(:,:),&                    !termos do tensor de deforma√ß√µes totais (el√°stica + pl√°stica)
+                            sigma(:,:),&                  !incremento do tensor de tens√µes
+                            tensor_s(:,:),&               !tensor de tens√µes do est√°gio de carregamento anterior
+                            tensor_dpl(:,:),&             !tensor de deforma√ß√µes pl√°sticas do est√°gio de carregamento anterior anterior
+                            tensor_d(:,:),&               !tensor de deforma√ß√µes totais do est√°gio de carregamento anterior anterior
+                            anisotropia_Ec(:),&           !vetor de anisotropia Ec (=Ec/Ea), onde Ea est√° no arquivo .prp.
+                            anisotropia_niac(:),&         !vetor de anisotropia niab (=niab/niac), onde niac est√° no arquivo .prp.
+                            shearDamageArray(:,:),&       !matriz de 2 coluna para dano da resist√™ncia ao cisalhamento nos elementos.
+                            elasticDamageArray(:)         !vetor de dano ao m√≥dulo de elasticidade.
+      REAL(8),ALLOCATABLE:: viscoLoad(:)                  !carga viscopl√°stica (pr√©vio a multiplica√ß√£o pelo passo de tempo).
       
       REAL(8):: currentStress(6,1)
       
@@ -390,7 +390,7 @@
       
       REAL(8):: I1,I2,I3
       
-      !AlocaÁ„o de memÛria.
+      !Aloca√ß√£o de mem√≥ria.
       ALLOCATE( g(ndof),num(nod),bee(nst,ndof),eld(ndof),bload(ndof),                   &
                 coord(nod,ndim),dee(nst,nst),deriv(ndim,nod),devp(nst),deltaSyy(nst),   &
                 eload(ndof),erate(nst),evp(nst),sigma(nst,nip),evpt(nst,nip),           &
@@ -404,8 +404,8 @@
       ALLOCATE(der(ndim,nod),jac(ndim,ndim))
   
       !******************************************
-      !C¡LCULO DE DEFORMA«’ES, TENS’ES E CARGA
-      !VISCOPL¡STICA DESBALANCEADA.
+      !C√ÅLCULO DE DEFORMA√á√ïES, TENS√ïES E CARGA
+      !VISCOPL√ÅSTICA DESBALANCEADA.
       !******************************************
       evpt=zero
       tensor_dpl=zero
@@ -474,7 +474,7 @@
         tensor_s = GeomechanicalModel%EffectiveStressTensor(:,:,iel)  !READ(15)tensor_s
         tensor_d = GeomechanicalModel%StrainTensor(:,:,iel)           !READ(16)tensor_d
         tensor_dpl = GeomechanicalModel%PlasticStrainTensor(:,:,iel)  !READ(17)tensor_dpl
-        evpt =  Container%tensor19(:,:,iel)                           !READ(19)evpt  !deformaÁ„o pl·stica acumulada da ˙ltima iteraÁ„o do passo atual
+        evpt =  Container%tensor19(:,:,iel)                           !READ(19)evpt  !deforma√ß√£o pl√°stica acumulada da √∫ltima itera√ß√£o do passo atual
     
         !Thermal strain.
         deltaTemp = SUM(DeltaT(num)) / 8.0
@@ -490,28 +490,28 @@
           f = zero
           
           !Derivative of shape functions [B].(*)
-          CALL shape_der(der,points,i)  !derivada das funÁıes de forma
-          jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integraÁ„o i
+          CALL shape_der(der,points,i)  !derivada das fun√ß√µes de forma
+          jac=MATMUL(der,coord)  !jacobiano do elemento no ponto de integra√ß√£o i
           CALL determinante(jac,det)  !determinante do jacobiano
           CALL invert(jac)  !inverso do jacobiano
-          deriv=MATMUL(jac,der)  !derivadas das funÁıes de forma em coordenadas reais
+          deriv=MATMUL(jac,der)  !derivadas das fun√ß√µes de forma em coordenadas reais
           CALL beemat(bee,deriv)  !Matriz de derivadas B
         
           !Strain ( {def}=[B]*{disp} ).
           eps(:,i) = MATMUL(bee,eld)
-          eps(:,i) = eps(:,i) - evpt(:,i)   !retirando a deformaÁ„o viscopl·stica de eps()
-          eps(:,i) = eps(:,i) - GeomechanicalModel%CreepStrainIncrementTensor(:,i,iel)  !retirando a deformaÁ„o de fluÍncia
+          eps(:,i) = eps(:,i) - evpt(:,i)   !retirando a deforma√ß√£o viscopl√°stica de eps()
+          eps(:,i) = eps(:,i) - GeomechanicalModel%CreepStrainIncrementTensor(:,i,iel)  !retirando a deforma√ß√£o de flu√™ncia
       
           !Elastic stress ( {st}=[D]*{defTerm} ).
           sigma(:,i) = zero
-          sigma(:,i) = MATMUL(dee,eps(:,i))  !D*(e_total-e_visco)+tensıes do step anterior
+          sigma(:,i) = MATMUL(dee,eps(:,i))  !D*(e_total-e_visco)+tens√µes do step anterior
       
           !Thermal stress.
           sigma(:,i) = sigma(:,i) - MATMUL(dee,eterm)
       
           !delta viscoplastic strain "devp" -> "evpt".
           IF( converged.OR.(iters==limit) )THEN
-            !final da iteraÁ„o. N„o roda plasticidade.
+            !final da itera√ß√£o. N√£o roda plasticidade.
             devp = sigma(:,i)  !passing the current stress increment.
           ELSE
           
@@ -539,7 +539,7 @@
             !VISCOPLASTIC STRAIN AND UNBALANCED STRESS-------------------------------------------
             IF( (f>=zero).OR.(converged.OR.iters==limit) )THEN
               evp = erate * dt * GeomechanicalModel%Gamma(iel)          !{DeltaDeformacaoPlastica}={TaxaDeformacaoViscoplastica}*Dt .
-              devp = MATMUL(dee,evp)                                    !DeltaTens„o devido o DeltaDeformacaoPlastica (TENS√O DESBALANCEADA).
+              devp = MATMUL(dee,evp)                                    !DeltaTens√£o devido o DeltaDeformacaoPlastica (TENS√ÉO DESBALANCEADA).
             ELSE
               evp = zero
               devp = zero
@@ -553,13 +553,13 @@
             GeomechanicalModel%PlasticStrainWork(iel) = GeomechanicalModel%PlasticStrainWork(iel) + &
                                                         0.5*DOT_PRODUCT(evp,sigma(:,i)-devp+tensor_s(:,i)) * det * weights(i)
 
-            !FIM DO C¡LCULO VISCOPL¡STICO.
+            !FIM DO C√ÅLCULO VISCOPL√ÅSTICO.
             !************************************************************************************
           END IF
       
           !Integration of umbalanced load "eload" ( {b} = devp*[B] ).
-          IF(f>=zero.OR.(converged.OR.iters==limit)) eload = MATMUL(devp,bee)               !transposto[B] * {DeltaTens„o}
-          IF(f>=zero.OR.(converged.OR.iters==limit)) bload = bload + eload*det*weights(i)   !integral(BT*Delta.Tens„o)
+          IF(f>=zero.OR.(converged.OR.iters==limit)) eload = MATMUL(devp,bee)               !transposto[B] * {DeltaTens√£o}
+          IF(f>=zero.OR.(converged.OR.iters==limit)) bload = bload + eload*det*weights(i)   !integral(BT*Delta.Tens√£o)
 
           GeomechanicalModel%YieldFunc(i,iel) = f
       
@@ -585,7 +585,7 @@
         damageTraction(1) = MAXVAL(damageTraction)
         IF(damageTraction(1)>GeomechanicalModel%DamageTraction(iel)) GeomechanicalModel%DamageTraction(iel) = damageTraction(1)
         
-        !AtualizaÁ„o das forÁas desbalanceadas globais com a contribuiÁ„o do elemento------------
+        !Atualiza√ß√£o das for√ßas desbalanceadas globais com a contribui√ß√£o do elemento------------
         !bdylds(g) = bdylds(g) + bload
         !bdylds(0) = zero
         viscoLoad(g) = viscoLoad(g) + bload
@@ -618,15 +618,15 @@
       USE SolidMechanicsLib
   
       IMPLICIT NONE
-      REAL(8),INTENT(IN OUT)::dt  !pseudo-passo de tempo do solver viscopl·stico
+      REAL(8),INTENT(IN OUT)::dt  !pseudo-passo de tempo do solver viscopl√°stico
       TYPE(Model),INTENT(IN OUT):: GeomechanicalModel
       
       INTEGER::iel  !contador
-      REAL(8):: ddt,start_dt=1.e15,&                          !pseudo-passo de tempo do solver viscopl·stico
+      REAL(8):: ddt,start_dt=1.e15,&                          !pseudo-passo de tempo do solver viscopl√°stico
                 !prop(23),&                                   !vetor para leitura de propriedades do elemento do arquivo .prp
-                phi,snph,&                                    !‚ngulo de atrito e seno
-                psi,snps,&                                    !‚ngulo de dilataÁ„o e seno
-                e,v,&                                         !mÛdulo de young e coficiente de poisson
+                phi,snph,&                                    !√¢ngulo de atrito e seno
+                psi,snps,&                                    !√¢ngulo de dilata√ß√£o e seno
+                e,v,&                                         !m√≥dulo de young e coficiente de poisson
                 pi,one=1.0,two=2.0,d180=180.0
       
       REAL(8):: dee(6,6)
@@ -642,7 +642,7 @@
       
       GeomechanicalModel%Gamma = 1.
       
-      !C·lculo do passo de tempo crÌtico.
+      !C√°lculo do passo de tempo cr√≠tico.
       pi=ACOS(-one)
       dt=start_dt
       DO iel=1,GeomechanicalModel%NumElements
@@ -658,7 +658,7 @@
           e = 0.5 * (GeomechanicalModel%TransverIsotropicProps(iel)%E1 + GeomechanicalModel%TransverIsotropicProps(iel)%E2)
           v = 0.5 * (GeomechanicalModel%TransverIsotropicProps(iel)%n1 + GeomechanicalModel%TransverIsotropicProps(iel)%n2)
 
-          ddt=two*(one+v)*(one-two*v)/(e*(one-two*v+snph*snps))     !critÈrio 1 de Stolle 1991, Eq. (32)
+          ddt=two*(one+v)*(one-two*v)/(e*(one-two*v+snph*snps))     !crit√©rio 1 de Stolle 1991, Eq. (32)
           IF(ddt<dt)dt=ddt
           
         ELSEIF(GeomechanicalModel%ConstitutiveGeoModel(iel)==3)THEN   !Cam-Clay.
@@ -741,46 +741,46 @@
       RETURN
     END SUBROUTINE
                      
-    ! Calcula tensor de deformaÁ„o viscopl·stica para o critÈrio Mohr-Coulomb.
+    ! Calcula tensor de deforma√ß√£o viscopl√°stica para o crit√©rio Mohr-Coulomb.
     SUBROUTINE MCDefVispl(i,prop,nst,sigma,tensor_s,f,erate)
-      !Subtorina para verificar critÈrio de ruptura de Mohr-Coulomb e 
-      !calcular taxa de deformaÁ„o viscopl·stica.
+      !Subtorina para verificar crit√©rio de ruptura de Mohr-Coulomb e 
+      !calcular taxa de deforma√ß√£o viscopl√°stica.
   
       USE ConstitutiveGeoModels
       USE SolidMechanicsLib
   
-      !VARI¡VEIS.
+      !VARI√ÅVEIS.
       IMPLICIT NONE
-      INTEGER,INTENT(IN)::  i,&  !n˙mero do ponto de Gauss.
-                            nst  !n˙mero de componentes de tens„o no tensor de tensıes (=6 para 3D).
-      REAL(8):: sigm,dsbar,lode_theta,&  !invariantes de tens„o.
-                  dq1,dq2,dq3,&  !derivadas do potencial de escoamento de Mohr-Coulomb com relaÁ„o aos trÍs invariantes de tens„o.
-                  phi,c,&  !‚ngulo de atrito (graus) e coes„o.
-                  psi,&  !‚ngulo de dilataÁ„o.
+      INTEGER,INTENT(IN)::  i,&  !n√∫mero do ponto de Gauss.
+                            nst  !n√∫mero de componentes de tens√£o no tensor de tens√µes (=6 para 3D).
+      REAL(8):: sigm,dsbar,lode_theta,&  !invariantes de tens√£o.
+                  dq1,dq2,dq3,&  !derivadas do potencial de escoamento de Mohr-Coulomb com rela√ß√£o aos tr√™s invariantes de tens√£o.
+                  phi,c,&  !√¢ngulo de atrito (graus) e coes√£o.
+                  psi,&  !√¢ngulo de dilata√ß√£o.
                   zero=0.0
       REAL(8),INTENT(IN)::prop(23)  !vetor com propriedades do elemento (lido do arquivo .prp)
-      REAL(8),INTENT(IN OUT)::f  !funÁ„o de escoamento
-      REAL(8),ALLOCATABLE:: m1(:,:),m2(:,:),m3(:,:),&  !derivada dos inveriantes com relaÁ„o as tensıes
-                              flow(:,:)  !derivada do potencial pl·stico com relaÁ„o as tensıes
-      REAL(8),ALLOCATABLE,INTENT(IN)::  sigma(:,:),&  !incremento do tensor de tensıes
-                                          tensor_s(:,:)  !tensor de tensıes do est·gio de carregamento anterior
-      REAL(8),ALLOCATABLE,INTENT(IN OUT)::  erate(:)  !taxa de deformaÁ„o pl·stiva 
+      REAL(8),INTENT(IN OUT)::f  !fun√ß√£o de escoamento
+      REAL(8),ALLOCATABLE:: m1(:,:),m2(:,:),m3(:,:),&  !derivada dos inveriantes com rela√ß√£o as tens√µes
+                              flow(:,:)  !derivada do potencial pl√°stico com rela√ß√£o as tens√µes
+      REAL(8),ALLOCATABLE,INTENT(IN)::  sigma(:,:),&  !incremento do tensor de tens√µes
+                                          tensor_s(:,:)  !tensor de tens√µes do est√°gio de carregamento anterior
+      REAL(8),ALLOCATABLE,INTENT(IN OUT)::  erate(:)  !taxa de deforma√ß√£o pl√°stiva 
   
-      !ALOCA«√O DE MEM”RIA.
+      !ALOCA√á√ÉO DE MEM√ìRIA.
       ALLOCATE( m1(nst,nst),m2(nst,nst),m3(nst,nst),flow(nst,nst) )
-      !>>>Verificar se a alocaÁ„o acima n„o est· piorando a performance.
-      !>>>Caso contr·rio, declarar na rotina de equilÌbrio estrutural.
+      !>>>Verificar se a aloca√ß√£o acima n√£o est√° piorando a performance.
+      !>>>Caso contr√°rio, declarar na rotina de equil√≠brio estrutural.
       
-      !PROPRIEDADES MEC¬NICAS.
-      c = prop(16)    !coes„o (kPa)
-      phi = prop(17)  !‚ngulo de atrito (graus)
-      psi = prop(18)  !‚ngulo de dilataÁ„o (graus)
+      !PROPRIEDADES MEC√ÇNICAS.
+      c = prop(16)    !coes√£o (kPa)
+      phi = prop(17)  !√¢ngulo de atrito (graus)
+      psi = prop(18)  !√¢ngulo de dilata√ß√£o (graus)
   
-      !C¡LCULO DA FUN«√O DE ESCOAMENTO.
+      !C√ÅLCULO DA FUN√á√ÉO DE ESCOAMENTO.
       CALL invar(sigma(:,i)+tensor_s(:,i),sigm,dsbar,lode_theta)
       CALL mocouf(phi,c,sigm,dsbar,lode_theta,f)
   
-      !C¡LCULO DA TAXA DE ESCOAMENTO.
+      !C√ÅLCULO DA TAXA DE ESCOAMENTO.
       !dQ/dsigma = dQ/dsigm*dsigm/ds + dQ/dJ2*dJ2/ds + dQ/dJ3*dJ3/ds
       !devp/td = f * dQ/dsigma
       IF(f>=zero)THEN
@@ -794,34 +794,34 @@
     END SUBROUTINE MCDefVispl
 
                          
-    ! Calcula tensor de deformaÁ„o viscopl·stica para o critÈrio Cam-Ccay modificado.
+    ! Calcula tensor de deforma√ß√£o viscopl√°stica para o crit√©rio Cam-Ccay modificado.
     SUBROUTINE CCDefVispl(Sigma,MCCparameters,f,erate)
-      !Subtorina para verificar critÈrio de ruptura de Mohr-Coulomb e 
-      !calcular taxa de deformaÁ„o viscopl·stica.
+      !Subtorina para verificar crit√©rio de ruptura de Mohr-Coulomb e 
+      !calcular taxa de deforma√ß√£o viscopl√°stica.
   
       USE ConstitutiveGeoModels
       USE SolidMechanicsLib
       USE DiscretizedModel
   
-      !VARI¡VEIS.
+      !VARI√ÅVEIS.
       IMPLICIT NONE
       REAL(8),INTENT(IN):: Sigma(6)                 
       REAL(4),INTENT(IN OUT):: MCCparameters(8)       !Pc(kPa)  M  kappa  lambda   e0   P0(kPa)
-      REAL(8),INTENT(IN OUT):: f                      !funÁ„o de escoamento
-      REAL(8),ALLOCATABLE,INTENT(IN OUT)::  erate(:)  !taxa de deformaÁ„o pl·stiva 
+      REAL(8),INTENT(IN OUT):: f                      !fun√ß√£o de escoamento
+      REAL(8),ALLOCATABLE,INTENT(IN OUT)::  erate(:)  !taxa de deforma√ß√£o pl√°stiva 
       
-      REAL(8):: sigm,dsbar,lode_theta,&   !invariantes de tens„o.
-                dq1,dq2,dq3               !derivadas do potencial de escoamento de Mohr-Coulomb com relaÁ„o aos trÍs invariantes de tens„o.
+      REAL(8):: sigm,dsbar,lode_theta,&   !invariantes de tens√£o.
+                dq1,dq2,dq3               !derivadas do potencial de escoamento de Mohr-Coulomb com rela√ß√£o aos tr√™s invariantes de tens√£o.
       REAL(8):: Pc, M, kappa, lambda, e0, P0, ec, evol_vp, ni
       REAL(8):: Pc_int, por
       INTEGER,PARAMETER:: nst = 6
-      REAL(8):: m1(nst,nst),m2(nst,nst),m3(nst,nst),&   !derivada dos inveriantes com relaÁ„o as tensıes
-                flow(nst,nst)                           !derivada do potencial pl·stico com relaÁ„o as tensıes
+      REAL(8):: m1(nst,nst),m2(nst,nst),m3(nst,nst),&   !derivada dos inveriantes com rela√ß√£o as tens√µes
+                flow(nst,nst)                           !derivada do potencial pl√°stico com rela√ß√£o as tens√µes
       
       !STRESS INCARIANTS
       CALL invar(Sigma,sigm,dsbar,lode_theta)
       
-      !PROPRIEDADES MEC¬NICAS.
+      !PROPRIEDADES MEC√ÇNICAS.
       Pc = MCCparameters(1)
       M = MCCparameters(2)
       kappa = MCCparameters(3)
@@ -858,25 +858,25 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
     RETURN
     END SUBROUTINE CCDefVispl
        
-    ! Calcula tensor de deformaÁ„o viscopl·stica para o critÈrio Traction.
+    ! Calcula tensor de deforma√ß√£o viscopl√°stica para o crit√©rio Traction.
     SUBROUTINE TracDefVispl(i,ST,nst,sigma,tensor_s,f,erate)
-      !Subtorina para verificar critÈrio de ruptura de Mohr-Coulomb e 
-      !calcular taxa de deformaÁ„o viscopl·stica.
+      !Subtorina para verificar crit√©rio de ruptura de Mohr-Coulomb e 
+      !calcular taxa de deforma√ß√£o viscopl√°stica.
   
       USE ConstitutiveGeoModels
       USE SolidMechanicsLib
   
-      !VARI¡VEIS.
+      !VARI√ÅVEIS.
       IMPLICIT NONE
-      INTEGER,INTENT(IN)::  i,&  !n˙mero do ponto de Gauss.
-                            nst  !n˙mero de componentes de tens„o no tensor de tensıes (=6 para 3D).
-      REAL(8),INTENT(IN OUT):: f                        !funÁ„o de escoamento
+      INTEGER,INTENT(IN)::  i,&  !n√∫mero do ponto de Gauss.
+                            nst  !n√∫mero de componentes de tens√£o no tensor de tens√µes (=6 para 3D).
+      REAL(8),INTENT(IN OUT):: f                        !fun√ß√£o de escoamento
       REAL(8),INTENT(IN):: ST                           !traction strength
-      REAL(8),ALLOCATABLE,INTENT(IN):: sigma(:,:),&     !incremento do tensor de tensıes
-                                       tensor_s(:,:)    !tensor de tensıes do est·gio de carregamento anterior
-      REAL(8),ALLOCATABLE,INTENT(IN OUT)::  erate(:)    !taxa de deformaÁ„o pl·stiva 
+      REAL(8),ALLOCATABLE,INTENT(IN):: sigma(:,:),&     !incremento do tensor de tens√µes
+                                       tensor_s(:,:)    !tensor de tens√µes do est√°gio de carregamento anterior
+      REAL(8),ALLOCATABLE,INTENT(IN OUT)::  erate(:)    !taxa de deforma√ß√£o pl√°stiva 
       
-      REAL(8):: sigm,dsbar,lode_theta,S3,&              !invariantes de tens„o
+      REAL(8):: sigm,dsbar,lode_theta,S3,&              !invariantes de tens√£o
                 pi=ACOS(-1.0)
       REAL(8),ALLOCATABLE:: DQDS(:)                     !dQdStress.
       
@@ -885,7 +885,7 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
       S3 = sigma(2,i)+tensor_s(2,i) !sigm + 2.0/3.0 * dsbar * SIN( lode_theta + 2.0 * pi / 3.0 )      
       f = S3-ST
   
-      !C¡LCULO DA TAXA DE ESCOAMENTO.
+      !C√ÅLCULO DA TAXA DE ESCOAMENTO.
       !dQ/dsigma = dQ/dsigm*dsigm/ds + dQ/dJ2*dJ2/ds + dQ/dJ3*dJ3/ds
       !devp/td = f * dQ/dsigma
       IF( f>=0.0 )THEN
@@ -912,27 +912,27 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
       IMPLICIT NONE
   
       !******************************************
-      !VARI¡VEIS
+      !VARI√ÅVEIS
       !******************************************
       
       !Input.
       TYPE(Model),INTENT(IN OUT):: GeomechanicalModel 
       INTEGER,INTENT(IN):: g_num(:,:),&   !conectividade dos elementos
-                           g_g(:,:)       !matriz para identificaÁ„o dos graus de liberdades dos nÛs
+                           g_g(:,:)       !matriz para identifica√ß√£o dos graus de liberdades dos n√≥s
       REAL(8),INTENT(IN):: Displacement(0:),&
-                           points(:,:),&  !coordenadas dos pontos de integraÁ„o
-                                       weights(:),&   !peso dos pontos de integraÁ„o
-                                       g_coord(:,:)   !coordenada dos nÛs
+                           points(:,:),&  !coordenadas dos pontos de integra√ß√£o
+                                       weights(:),&   !peso dos pontos de integra√ß√£o
+                                       g_coord(:,:)   !coordenada dos n√≥s
       
       REAL(8),ALLOCATABLE:: deltaPorepressure(:),Pp(:)
       INTEGER,ALLOCATABLE:: nsum(:)
       
-      INTEGER:: ndim,&    !n˙mero de dimensıes
-                nels,&    !n˙mero de elementos na malha
-                nod,&     !n˙mero de nÛs de deslocamento por elemento (=8 para hexaÈdro linear)
-                nip,&     !n˙mero de pontos de integraÁ„o
-                ndof,&    !n˙mero de graus de liberdade de deslocamento por elemento
-                nst       !n˙mero de componentes de tens„o no tensor de tensıes (=6 para 3D) 
+      INTEGER:: ndim,&    !n√∫mero de dimens√µes
+                nels,&    !n√∫mero de elementos na malha
+                nod,&     !n√∫mero de n√≥s de deslocamento por elemento (=8 para hexa√©dro linear)
+                nip,&     !n√∫mero de pontos de integra√ß√£o
+                ndof,&    !n√∫mero de graus de liberdade de deslocamento por elemento
+                nst       !n√∫mero de componentes de tens√£o no tensor de tens√µes (=6 para 3D) 
             
       INTEGER:: iel,i
       REAL(8):: det,&     !determinante de matriz
@@ -940,15 +940,15 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
       
       INTEGER,ALLOCATABLE:: num(:) ,&                     !conectividade de um elemento
                             g(:)                          !vetor com os graus de liberdade de cada elemento
-      REAL(8),ALLOCATABLE:: coord(:,:),&                  !coordenada dos nÛs de um elemento
-                            jac(:,:),&                    !matriz jacobiana das funÁıes de forma.
-                            der(:,:),&                    !derivadas das funÁıes de forma dos deslocamentos em coordenadas naturais.                        
-                            deriv(:,:),&                  !derivadas das funÁıes de forma com relaÁ„o ‡s coordenadas locais e globais
-                            bee(:,:),&                    !matriz de derivadas das funÁıes de forma
-                            dee(:,:),&                    !matriz de relaÁıes el·sticas
+      REAL(8),ALLOCATABLE:: coord(:,:),&                  !coordenada dos n√≥s de um elemento
+                            jac(:,:),&                    !matriz jacobiana das fun√ß√µes de forma.
+                            der(:,:),&                    !derivadas das fun√ß√µes de forma dos deslocamentos em coordenadas naturais.                        
+                            deriv(:,:),&                  !derivadas das fun√ß√µes de forma com rela√ß√£o √†s coordenadas locais e globais
+                            bee(:,:),&                    !matriz de derivadas das fun√ß√µes de forma
+                            dee(:,:),&                    !matriz de rela√ß√µes el√°sticas
                             eld(:),&                      !deslocamentos nodais de um elemento
-                            strain(:),&                   !termos do tensor de deformaÁıes
-                            stress(:)                     !incremento do tensor de tensıes
+                            strain(:),&                   !termos do tensor de deforma√ß√µes
+                            stress(:)                     !incremento do tensor de tens√µes
       
       nels = GeomechanicalModel%NumElements
       ndim = GeomechanicalModel%NumDimensions
@@ -957,7 +957,7 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
       nod = GeomechanicalModel%NumNodesPerElement
       ndof = GeomechanicalModel%NumDOFUperElement
       
-      !AlocaÁ„o de memÛria.
+      !Aloca√ß√£o de mem√≥ria.
       ALLOCATE( g(ndof),num(nod),bee(nst,ndof),eld(ndof),der(ndim,nod),jac(ndim,ndim),&
                 coord(nod,ndim),dee(nst,nst),deriv(ndim,nod),stress(nst),strain(nst) )
       
@@ -1030,12 +1030,12 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
   
     SUBROUTINE PCG(cg_limit,neq,cg_tol,diag_precon,a,ia,ja,loads,initialGuess,RestrictedDOFs,nthreads,linSolverIters)
       !---------------------------------------------------------------------------------------------------------------
-      !solver de sistema linear de equaÁıes com o mÈtodo dos GRADIENTES CONJUGADOS prÈ-condionado diagonalmente (PCG).
+      !solver de sistema linear de equa√ß√µes com o m√©todo dos GRADIENTES CONJUGADOS pr√©-condionado diagonalmente (PCG).
       !rotina paralelizada para o OpenMP vrs. 3.0 .
       !uso de rotinas seriais do Intel Fortran Math Kernel Library - MKL
       !armazenamento de matrizes formato CSR Intel
       !
-      !ReferÍncia: Ian M. Smith, D. V. Griffiths.
+      !Refer√™ncia: Ian M. Smith, D. V. Griffiths.
       !Professor Smith is currently the Head of the Geotechnics Division at the Manchester Centre for Civil and Construction Engineering, UMIST
       !Professor Griffiths is Professor of Civil Engineering, Division of Engineering at the Colorado School of Mines
       !---------------------------------------------------------------------------------------------------------------
@@ -1046,66 +1046,66 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
       
       IMPLICIT NONE
       
-      REAL(8),INTENT(IN):: diag_precon(:),& !prÈ-condicionador do solver
-                            a(:)  !vetor de elementos n„o zero da matriz A do sistema A*x=b
+      REAL(8),INTENT(IN):: diag_precon(:),& !pr√©-condicionador do solver
+                            a(:)  !vetor de elementos n√£o zero da matriz A do sistema A*x=b
       REAL(8),INTENT(IN OUT)::loads(:)  !vetor de carregamento estrutural (IN) e resultados (OUT)
-      REAL(8),INTENT(IN)::initialGuess(:)  !vetor com a soluÁ„o inicial de entrada no mÈtodo
-      INTEGER,INTENT(IN)::neq,&  !n˙mero de equaÁıes
-                          cg_limit  !n˙mero m·ximo de iteraÁıes do solver      
-      REAL(8),INTENT(IN)::cg_tol  !toler‚ncia para convergÍncia do solver linear
-      INTEGER,INTENT(IN)::ia(:),&  !identificaÁ„o da posiÁ„o de inÌcio das linhas no vetor a(:)
-                          ja(:)  !identificaÁ„o das colunas dos elementos n„o-zero da matriz
+      REAL(8),INTENT(IN)::initialGuess(:)  !vetor com a solu√ß√£o inicial de entrada no m√©todo
+      INTEGER,INTENT(IN)::neq,&  !n√∫mero de equa√ß√µes
+                          cg_limit  !n√∫mero m√°ximo de itera√ß√µes do solver      
+      REAL(8),INTENT(IN)::cg_tol  !toler√¢ncia para converg√™ncia do solver linear
+      INTEGER,INTENT(IN)::ia(:),&  !identifica√ß√£o da posi√ß√£o de in√≠cio das linhas no vetor a(:)
+                          ja(:)  !identifica√ß√£o das colunas dos elementos n√£o-zero da matriz
       INTEGER,INTENT(IN):: RestrictedDOFs(:)
       INTEGER,INTENT(IN):: nthreads
       INTEGER,INTENT(IN OUT):: linSolverIters
       
-      !VARI¡VEIS EST¡TICAS
+      !VARI√ÅVEIS EST√ÅTICAS
       INTEGER::i,&  !contadores
-                nParticoes,j,k,&  !vari·veis auxilares para esquema de partiÁ„o
-                cg_iters,&  !contador de iteraÁıes do solver linear
-                PCG_tempo(3,2)  !marcaÁ„o de tempo do solver linear
+                nParticoes,j,k,&  !vari√°veis auxilares para esquema de parti√ß√£o
+                cg_iters,&  !contador de itera√ß√µes do solver linear
+                PCG_tempo(3,2)  !marca√ß√£o de tempo do solver linear
 
-      REAL(8)::alpha,beta,up,dot_p_u,dot_loads_d,&  !vari·veis do processo do gradientes conjugados
-                  convergence,&         !convergÍncia
+      REAL(8)::alpha,beta,up,dot_p_u,dot_loads_d,&  !vari√°veis do processo do gradientes conjugados
+                  convergence,&         !converg√™ncia
                   temp1,temp2,zero=0.0  !auxiliares
-      REAL(8)::startTime,endTime  !vari·veis para marcaÁ„o de tempo gasto em segundos
-      LOGICAL::cg_converged  !flag para convergÍncia do solver
+      REAL(8)::startTime,endTime  !vari√°veis para marca√ß√£o de tempo gasto em segundos
+      LOGICAL::cg_converged  !flag para converg√™ncia do solver
       
-      !VARI¡VEIS DIN¬MICAS
-      INTEGER,ALLOCATABLE::particoes(:,:)  !guarda informaÁıes da partiÁ„o dos vetores
+      !VARI√ÅVEIS DIN√ÇMICAS
+      INTEGER,ALLOCATABLE::particoes(:,:)  !guarda informa√ß√µes da parti√ß√£o dos vetores
       REAL(8),ALLOCATABLE::time(:)  !vetor que guarda o tempo computacional do produto de cada linha 
                                       !da matriz de rigidez (a) com o vetor "p". Para balanceamento de cargas do 
                                       !processamento paralelo.
-      REAL(8),ALLOCATABLE::d(:),p(:),u(:),x(:),xnew(:),&  !vari·veis dos gradientes conjudados
+      REAL(8),ALLOCATABLE::d(:),p(:),u(:),x(:),xnew(:),&  !vari√°veis dos gradientes conjudados
                               auxRealDb(:)  !auxiliar
       
       CHARACTER(LEN=320):: text
       
-      !VARI¡VEIS DE TELEMETRIA
+      !VARI√ÅVEIS DE TELEMETRIA
       real(8)::t1,t2,dt(7)
       
       ALLOCATE(d(neq),p(neq),u(neq),x(neq),xnew(neq),time(neq),auxRealDb(neq))
       
-      !SOLU«√O DO SISTEMA DE EQUA«’ES
+      !SOLU√á√ÉO DO SISTEMA DE EQUA√á√ïES
       
-      !marcaÁ„o de tempo
+      !marca√ß√£o de tempo
       startTime = OMP_get_wtime()
       
-      !INICIALIZA«√O
+      !INICIALIZA√á√ÉO
       CALL itime(PCG_tempo(:,1))
       
-      !1a aproximaÁ„o da soluÁ„o
+      !1a aproxima√ß√£o da solu√ß√£o
       x = initialGuess
       
-      !ResÌduo inicial da equaÁ„o de equilÌbrio: p = loads - [K]{u}
+      !Res√≠duo inicial da equa√ß√£o de equil√≠brio: p = loads - [K]{u}
       auxRealDb=zero
-      CALL mkl_dcsrgemv('N', neq, a, ia, ja, initialGuess, auxRealDb)  !MKL - rotina blas2 para multiplicaÁ„o matriz esparsa por vetor.
-      !CALL mkl_dcsrsymv('U', neq, a, ia, ja, initialGuess, auxRealDb)  !matriz simÈtrica.
+      CALL mkl_dcsrgemv('N', neq, a, ia, ja, initialGuess, auxRealDb)  !MKL - rotina blas2 para multiplica√ß√£o matriz esparsa por vetor.
+      !CALL mkl_dcsrsymv('U', neq, a, ia, ja, initialGuess, auxRealDb)  !matriz sim√©trica.
       auxRealDb = loads(2:neq+1) - auxRealDb
       loads(2:neq+1) = auxRealDb
       loads(1+RestrictedDOFs) = 0.0
       
-      !Aplicando prÈ-condicionador diagonal no resÌduo da equaÁ„o de equilÌbrio
+      !Aplicando pr√©-condicionador diagonal no res√≠duo da equa√ß√£o de equil√≠brio
       d = zero
       CALL vdmul( neq, diag_precon(2:neq+1), loads(2:neq+1), d )  !MKL VMF
       d(RestrictedDOFs) = 0.0
@@ -1116,7 +1116,7 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
       ALLOCATE(particoes(2,nthreads))
       particoes(2,nthreads)=neq
       !
-      !particionando os graus de liberdade igualmente (vetor unit·rios).
+      !particionando os graus de liberdade igualmente (vetor unit√°rios).
       xnew = 1.0
       CALL PARTICIONAMENTO(xnew,particoes)
       xnew = 0.0    
@@ -1131,9 +1131,9 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
   !$OMP PARALLEL DEFAULT(SHARED)
   !$OMP DO PRIVATE(i,j,k) SCHEDULE(STATIC)
         DO i=1,nParticoes
-          !marcaÁ„o dos graus de liberdade da partiÁ„o
+          !marca√ß√£o dos graus de liberdade da parti√ß√£o
           j = particoes(1,i)
-          k = particoes(2,i)  !grau de liberdade de inÌcio da prÛxima partiÁ„o
+          k = particoes(2,i)  !grau de liberdade de in√≠cio da pr√≥xima parti√ß√£o
           !u = k * p
           CALL SpAx( a, ia, ja, j, k, p, u )
         END DO
@@ -1163,11 +1163,11 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
         beta = dot_loads_d / up
         !p = d + p * beta
         CALL ADICAOabea_pp(p,d,beta,particoes)
-        !verificando convergÍncia
+        !verificando converg√™ncia
         CALL MAX_pp( xnew, x, particoes, temp2, temp1)
         convergence = temp1 / temp2
         cg_converged = (convergence<=cg_tol)
-        !critÈrio de parada
+        !crit√©rio de parada
         IF( ( (cg_converged) .OR. (cg_iters==cg_limit)) .AND. (cg_iters>1) ) EXIT
         !x = xnew
         CALL dswap(neq, x, 1, xnew, 1)  !mkl  blas1 - troca os elementos entre os vetores / objetivo: x=xnew / apresentou melhor desempenho do que dcopy(neq, xnew, 1, x, 1)
@@ -1192,7 +1192,7 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
         STOP
       END IF
       
-      !DESALOCANDO MEM”RIA
+      !DESALOCANDO MEM√ìRIA
       !DEALLOCATE(d,p,u,x,xnew)
       
       linSolverIters = cg_iters
@@ -1205,21 +1205,21 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
       !-----------------------------------------------------------------------------
       !pre-condicionador para o solver iterativo gradientes conjugados
       !rotina paralelizada para o OpenMP vrs. 3.0.
-      !PrÈ-condicionador tradicional do Smith e Griffiths
+      !Pr√©-condicionador tradicional do Smith e Griffiths
       !-----------------------------------------------------------------------------
   
       USE OMP_LIB  !bibliotecas OpenMP(R)
     
       IMPLICIT NONE
       
-      INTEGER,INTENT(IN)::ia(:),&   !identificaÁ„o da posiÁ„o de inÌcio das linhas no vetor a(:)
-                          ja(:)     !identificaÁ„o das colunas dos elementos n„o-zero da matriz
-      REAL(8),INTENT(IN)::a(:)      !vetor de elementos n„o zero da matriz A do sistema A*x=b
-      REAL(8),ALLOCATABLE,INTENT(IN OUT)::diag_precon(:)  !prÈ-dondicionador.
+      INTEGER,INTENT(IN)::ia(:),&   !identifica√ß√£o da posi√ß√£o de in√≠cio das linhas no vetor a(:)
+                          ja(:)     !identifica√ß√£o das colunas dos elementos n√£o-zero da matriz
+      REAL(8),INTENT(IN)::a(:)      !vetor de elementos n√£o zero da matriz A do sistema A*x=b
+      REAL(8),ALLOCATABLE,INTENT(IN OUT)::diag_precon(:)  !pr√©-dondicionador.
     
       INTEGER:: i,&  !contador
                 posicaoInicioLinha,posicao  !auxilares para posicionamento na matriz de rigidez
-      INTEGER::neq                          !n˙mero de graus de liberdade na matriz de rigidez
+      INTEGER::neq                          !n√∫mero de graus de liberdade na matriz de rigidez
       REAL(8):: one=1.0, zero=0.0
 
       neq = SIZE(ia)-1
@@ -1300,7 +1300,7 @@ write(16,*)sigm/1e3,dsbar/1e3,Pc/1e3
       !STIFFNESS MATRIX.
       !*************************************************************************
       
-      IF( SIZE(Stiff%ia)==0 )THEN
+      IF( .NOT.ALLOCATED(Stiff%ia) )THEN
         CALL SparseStiffnessMatrixCSR(GeomechanicalModel,Stiff%a,Stiff%ia,Stiff%ja)
       END IF
       

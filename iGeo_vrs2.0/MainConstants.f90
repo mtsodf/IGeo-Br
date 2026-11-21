@@ -10,12 +10,12 @@
 
   MODULE MainConstants
 
-    INTEGER::ndim=3,&  !n˙mero de dimensıes do problema
-        nod=8,&  !n˙mero de nÛs de deslocamento por elemento
-        ndof=24,&  !n˙mero de graus de liberdade de deslocamento por elemento
-        nodf=8,&  !n˙mero de nÛs com grau de liberdade de poro-press„o (mas ser· usado como constante).
-        nodof=3,&  !n˙mero de graus de liberdade de deslocamento por nÛ
-        nst=6  !n˙mero de componentes no tensor de tensıes
+    INTEGER::ndim=3,&  !número de dimensões do problema
+        nod=8,&  !número de nós de deslocamento por elemento
+        ndof=24,&  !número de graus de liberdade de deslocamento por elemento
+        nodf=8,&  !número de nós com grau de liberdade de poro-pressão (mas será usado como constante).
+        nodof=3,&  !número de graus de liberdade de deslocamento por nó
+        nst=6  !número de componentes no tensor de tensões
     CHARACTER(LEN=320)::element="hexahedron"  !tipo de elemento finito ('hexahedron' ou 'tetrahedron')
 
   END MODULE

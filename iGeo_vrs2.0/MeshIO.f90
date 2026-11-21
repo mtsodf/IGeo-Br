@@ -13,7 +13,7 @@
 
   CONTAINS
 
-    !Exporta grid em fornato padr�o.
+    !Exporta grid em fornato padrão.
     SUBROUTINE MeshToFile( Path, FileName, FileNum, Coords, ElementIncidence )
 
         USE IO
@@ -42,7 +42,7 @@
             WRITE(FileNum,*)Coords(1,i),Coords(2,i),Coords(3,i)
         END DO
 
-        !Exportando incid�ncia dos elementos finitos.
+        !Exportando incidência dos elementos finitos.
         WRITE(FileNum,*)numElements
         DO i=1, numElements
             WRITE(FileNum,*)ElementIncidence(:,i)

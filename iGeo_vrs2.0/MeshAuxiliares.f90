@@ -45,8 +45,8 @@
       
     END FUNCTION
 
-    ! Rotina para gera��o da malha de elementos finitos para um cubo.
-    ! Elementos Hexa�dricos de 8, 14 e 20 n�s.
+    ! Rotina para geração da malha de elementos finitos para um cubo.
+    ! Elementos Hexaédricos de 8, 14 e 20 nós.
     ! Smith & Griffiths 2004.
     SUBROUTINE hexahedron_xz(iel,x_coords,y_coords,z_coords,coord,num)
 
@@ -187,7 +187,7 @@
         RETURN
     END SUBROUTINE hexahedron_xz
 
-    ! Rotina para defini��o do tamanho da malha de elementos finitos para um cubo.
+    ! Rotina para definição do tamanho da malha de elementos finitos para um cubo.
     ! Smith & Griffiths 2004.
     SUBROUTINE mesh_size(element,nod,nels,nn,nxe,nye,nze)
         !
@@ -248,7 +248,7 @@
         zPillars( NZ+1 ) =  zPillars( NZ ) - 1.0
       END IF
           
-      !Criando falsos pilares em x,y para posterior corre��o de coordenadas.
+      !Criando falsos pilares em x,y para posterior correção de coordenadas.
       DO i=1 , (NX+1)
         xPillars(i) = (i-1)*LX/NX
       END DO

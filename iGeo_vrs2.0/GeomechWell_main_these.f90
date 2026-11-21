@@ -75,7 +75,7 @@
   
     INTEGER:: Chanel_log=9, Chanel_base=10, Chanel_vtk = 30, FreeChanel = 99
 
-    CHARACTER(LEN=320)::buffer  !vari�vel para armazenamento de argumentos passados ao programa.
+    CHARACTER(LEN=320)::buffer  !variável para armazenamento de argumentos passados ao programa.
     CHARACTER(LEN=320)::VTKfileName
       
     CHARACTER(LEN=25):: ModelType       !Well
@@ -105,6 +105,9 @@
     !Build well models.
     CALL PrintMessage( .FALSE., .FALSE., 'BUILDING WELL MODEL.' )
     CALL BuildNearWellBoreModel( WellData, Chanel_base, WellModel )
+    !BuildNearWellBoreModel completa WellData (ex.: WellBoreWallFlag); mantém a
+    !cópia em Problem%WellData atualizada, como no fim de ReadBaseFile.
+    Problem%WellData = WellData
 
     !Geomechanical Model.
     CALL PrintMessage( .FALSE., .FALSE., 'BUILDING FE GEOMECHANICAL MODEL.' )

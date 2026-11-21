@@ -20,12 +20,12 @@
                                                 RHS,initialGuess)
     
       !---------------------------------------------------------------------------------------------------------------
-      !solver de sistema linear de equa��es com o m�todo dos GRADIENTES CONJUGADOS pr�-condionado diagonalmente (PCG).
+      !solver de sistema linear de equações com o método dos GRADIENTES CONJUGADOS pré-condionado diagonalmente (PCG).
       !rotina paralelizada para o OpenMP vrs. 3.0 .
       !uso de rotinas seriais do Intel Fortran Math Kernel Library - MKL
       !armazenamento de matrizes formato CSR Intel
       !
-      !Refer�ncia: Ian M. Smith, D. V. Griffiths.
+      !Referência: Ian M. Smith, D. V. Griffiths.
       !Professor Smith is currently the Head of the Geotechnics Division at the Manchester Centre for Civil and Construction
       !Engineering, UMIST
       !Professor Griffiths is Professor of Civil Engineering, Division of Engineering at the Colorado School of Mines
@@ -43,7 +43,7 @@
       INTEGER,INTENT(IN)::TransDOFs(:,:)
       LOGICAL,INTENT(IN):: RestrictedDOFs(:)  !flag for prescribed pressure b.c..
       REAL(iwp),INTENT(IN OUT)::RHS(:)  !vetor de carregamento estrutural (IN) e resultados (OUT)
-      REAL(iwp),INTENT(IN)::initialGuess(:)  !vetor com LHSa solu��o inicial de entrada no m�todo
+      REAL(iwp),INTENT(IN)::initialGuess(:)  !vetor com LHSa solução inicial de entrada no método
     
       INTEGER,ALLOCATABLE:: activeDOFs(:),vectorActiveDOFs(:)
       REAL(iwp),ALLOCATABLE:: diag_precon(:),& !pre-conditioner.
@@ -240,12 +240,12 @@
                                     FracTrans,FracTransDOFs,ListOfActiveFracElements,RHS,initialGuess)
 
         !---------------------------------------------------------------------------------------------------------------
-        !solver de sistema linear de equa��es com o m�todo dos GRADIENTES CONJUGADOS pr�-condionado diagonalmente (PCG).
+        !solver de sistema linear de equações com o método dos GRADIENTES CONJUGADOS pré-condionado diagonalmente (PCG).
         !rotina paralelizada para o OpenMP vrs. 3.0 .
         !uso de rotinas seriais do Intel Fortran Math Kernel Library - MKL
         !armazenamento de matrizes formato CSR Intel
         !
-        !Refer�ncia: Ian M. Smith, D. V. Griffiths.
+        !Referência: Ian M. Smith, D. V. Griffiths.
         !Professor Smith is currently the Head of the Geotechnics Division at the Manchester Centre for Civil and Construction
         !Engineering, UMIST
         !Professor Griffiths is Professor of Civil Engineering, Division of Engineering at the Colorado School of Mines
@@ -266,7 +266,7 @@
         REAL(iwp),INTENT(IN):: FracTrans(:,:,:)
         INTEGER,INTENT(IN):: FracTransDOFs(:,:),ListOfActiveFracElements(:)
         REAL(iwp),INTENT(IN OUT)::RHS(:)  !vetor de carregamento estrutural (IN) e resultados (OUT)
-        REAL(iwp),INTENT(IN)::initialGuess(:)  !vetor com LHSa solu��o inicial de entrada no m�todo
+        REAL(iwp),INTENT(IN)::initialGuess(:)  !vetor com LHSa solução inicial de entrada no método
 
         INTEGER,ALLOCATABLE:: activeDOFs(:),vectorActiveDOFs(:)
         REAL(iwp),ALLOCATABLE:: diag_precon(:),& !pre-conditioner.
