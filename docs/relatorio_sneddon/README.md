@@ -5,9 +5,11 @@
 - **Caso usado:** injeção, a pressão controlada, numa fratura de comprimento fixo, em deformação plana, numa rocha elástica impermeável. A solução analítica é a de Sneddon (1946) para uma fratura pressurizada.
 - **Problema encontrado:** no primeiro passo de tempo o iGeo reproduzia a solução. A partir do segundo passo, a abertura crescia continuamente **mesmo com a pressão constante**: +11,7 % na abertura no centro e +22 % no volume depois de 6 passos.
 - **Causa:** a cada passo, `UpdateHydraulicFracture` reaplicava como carga na face o resíduo `p + σyy`, com σyy igual à tensão **média** do elemento junto à face. No elemento da ponta a tensão é singular, essa média nunca chega a −p e o resíduo nunca zera.
-- **Correção:** a primeira carga de cada elemento continua sendo `p + σyy`, que libera a tensão da face quando ela abre. As cargas seguintes aplicam só a **variação da pressão do fluido** desde a carga anterior.
+- **Correção:** a carga de cada nó livre da face passa a ser o resíduo entre a força da pressão do fluido e a **força interna nodal**, calculada como `F_inicial + K·u` com a mesma matriz de rigidez do solver. Em equilíbrio esse resíduo é exatamente a variação da pressão, e num nó recém-liberado é exatamente a força de liberação.
 - **Resultado:** a abertura fica constante enquanto a pressão é mantida. O erro em relação a Sneddon é de −1,4 % no centro e −2,4 % no volume, e diminui com o refino da malha e com o tamanho do domínio.
-- **Efeito em fraturas que se propagam:** no caso `M3_injection_test`, a fratura passa a se propagar durante a injeção (43 eventos em 22 min, contra 1 antes), e a pressão cai em dente de serra a cada evento. Ainda falta validar a propagação contra uma solução de referência (por exemplo, o KGD).
+- **Efeito em fraturas que se propagam:** no caso `M3_injection_test`, o número de avanços da fratura mudou a cada versão do carregamento (1 evento na versão original, 43 em 22 min com a primeira versão desta correção, nenhum em 150 min com a versão atual). A propagação é muito sensível ao carregamento da face e ainda precisa ser validada.
+
+> **Histórico.** A primeira versão desta correção aplicava a carga de forma incremental (`p + σyy` na primeira carga e depois só `Δp`). Ela resolvia o caso de Sneddon, mas na verificação PKN ([`docs/relatorio_pkn/`](../relatorio_pkn/README.md)) distorcia o perfil de fraturas em propagação. A seção 3 descreve a versão atual. A partir do 2º passo, as duas versões dão os mesmos números; no 1º passo a diferença é de 0,04 ponto percentual, porque agora a fratura precisa ser enchida pelo fluxo.
 
 ---
 
@@ -51,7 +53,7 @@ Parâmetros: E = 10 GPa, ν = 0,25, L = 5 m, H = 1 m, pressão no poço de 11 MP
 
 *Figura 2 — Malha em planta junto à fratura: 400 × 45 elementos, dx = 0,25 m (20 elementos na fratura), com Y em progressão geométrica (o primeiro elemento tem cerca de 1 cm).*
 
-**Por que pressão controlada, e não vazão.** O iGeo resolve o fluxo e a mecânica em sequência, e a complacência da fratura (o quanto ela abre por unidade de pressão) só entra no passo seguinte, como correção de volume. Em rocha impermeável, no primeiro passo de fluxo a fratura ainda tem volume zero e a pressão diverge (chegou a 423 MPa no teste). Com a pressão imposta no poço, a pressão na fratura é conhecida, e a abertura pode ser comparada diretamente com Sneddon.
+**Por que pressão controlada, e não vazão.** Com a pressão imposta no poço, a pressão na fratura é conhecida e a abertura pode ser comparada diretamente com Sneddon. Quando este caso foi montado, a injeção a vazão controlada em rocha impermeável também divergia (a pressão chegou a 423 MPa), porque a equação de fluxo não incluía o aumento de volume da fratura. Isso foi corrigido na verificação PKN ([`docs/relatorio_pkn/`](../relatorio_pkn/README.md)). Desde essa correção, o fluido que abre a fratura vem do poço pela própria fratura, e no fim do 1º passo a pressão perto da ponta ainda está cerca de 0,5 % abaixo da do poço.
 
 ---
 
@@ -70,9 +72,9 @@ O caso foi rodado com a pressão no poço mantida em 11 MPa por 6 passos. A solu
 | Passo | 1 | 2 | 3 | 4 | 5 | 6 |
 |---|---|---|---|---|---|---|
 | Antes da correção: erro no centro | +0,35 % | +3,8 % | +6,7 % | +8,8 % | +10,5 % | +11,7 % |
-| Corrigido: erro no centro | −1,39 % | −1,39 % | −1,39 % | −1,39 % | −1,39 % | −1,39 % |
+| Corrigido: erro no centro | −1,43 % | −1,39 % | −1,39 % | −1,39 % | −1,39 % | −1,39 % |
 
-No 6º passo, o volume da fratura estava 22 % acima de Sneddon na versão anterior e 2,4 % abaixo na corrigida.
+No 6º passo, o volume da fratura estava 22 % acima de Sneddon na versão anterior e 2,4 % abaixo na corrigida. No 1º passo da versão corrigida a fratura ainda termina de encher (pressão líquida média de 996,5 kPa), daí os −1,43 %.
 
 A versão anterior parece melhor no 1º passo (+0,35 %) por acaso. Cada passo tem dois subpassos de acoplamento, e o segundo já soma um pouco da deriva, que compensa a rigidez do domínio finito. Essa compensação deixa de valer a partir do 2º passo.
 
@@ -101,28 +103,28 @@ A carga aplicada na face é o **resíduo** entre a pressão do fluido `p` e a te
 
 ## 3. A correção
 
-Em `HydraulicFractureModel.f90`, cada elemento da fratura passa a guardar a pressão já aplicada como carga na sua face (`AppliedPressure`) e um indicador de que já foi carregado (`FaceLoaded`):
+Em `UpdateHydraulicFracture` (`HydraulicFractureModel.f90`), a carga deixou de ser calculada por elemento. Ela agora é aplicada em cada **nó livre da face** (um nó cujos elementos da face estão todos abertos):
 
 ```fortran
-IF( HFmodel%FaceLoaded(i) )THEN
-  fy = (p - HFmodel%AppliedPressure(i)) * area * HFmodel%Damage(i)   ! só a variação da pressão
-ELSE
-  fy = (p + sn) * area * HFmodel%Damage(i)                           ! primeira carga: libera a tensão da face
-END IF
-IF ( .NOT.HFmodel%FracClosure .AND. fy<0.0 )THEN
-  fy = 0.0                                   ! sem fechamento: a queda de pressão não é aplicada
-ELSE
-  HFmodel%AppliedPressure(i) = p
-  HFmodel%FaceLoaded(i) = .TRUE.
-END IF
+!F_fluido: p * área / 4 de cada elemento aberto que contém o nó
+residual = targetForce(i) - (HFmodel%NodeInitialForce(i) + Ku(dof)) + HFmodel%NodeOtherLoad(i)
+IF ( .NOT.HFmodel%FracClosure .AND. residual<0.0 ) residual = 0.0
+Load(dof) = Load(dof) + residual
 ```
+
+com `Ku = K·u`, o produto da matriz de rigidez do solver mecânico pelo deslocamento atual. Os outros termos:
+
+- `NodeInitialForce`: força interna das tensões iniciais em cada nó da face, calculada uma vez em `RunFracWaterInjection`. É a força das tensões efetivas, menos `K·u` naquele instante, menos a carga poroelástica da pressão de poros inicial.
+- `NodeOtherLoad`: soma das outras cargas externas (poroelástica, térmica) já aplicadas no nó.
 
 Por que funciona:
 
-- **Primeira carga de cada elemento** (quando ele abre, seja pré-fratura ou propagação): continua `p + σyy`. Ela substitui a tração que a rocha transmitia pela face pela pressão do fluido. Para a pré-fratura sob tensão uniforme, é exatamente `(p − Shmin)·área`.
-- **Cargas seguintes:** só `Δp·área`. Em elasticidade linear, a superposição das cargas é exata, e o resultado deixa de depender da tensão média do elemento. A singularidade da ponta não realimenta mais a carga.
-- **Sem fechamento (`FracClosure` falso):** uma queda de pressão continua não sendo aplicada, como antes, e `AppliedPressure` não é atualizada. Assim uma nova subida de pressão é medida a partir da última carga efetivamente aplicada.
-- **Nenhuma carga é contada em dobro:** `UpdateHydraulicFracture` é chamada uma vez por subpasso de acoplamento, antes do laço de iterações da fratura. As re-soluções desse laço reaplicam a mesma carga, e o estado final do subpasso é aceito.
+- **Nó livre em equilíbrio:** a força interna é exatamente a carga já aplicada, e o resíduo é só `Δp·área`. Não há deriva, e a singularidade da ponta não entra na carga.
+- **Nó recém-liberado** (pré-fratura no início, ou propagação): o resíduo inclui exatamente a reação que o nó transmitia. É a força de liberação mais a pressão do fluido. Para a pré-fratura sob tensão uniforme, dá `(p − Shmin)·área`, a mesma carga de antes.
+- **Contato:** se um nó é travado numa re-solução porque o deslocamento ficou negativo, a carga dele vai para a reação, e o resíduo do subpasso seguinte a recupera.
+- **Por que `K·u` e não as tensões:** o iGeo calcula as tensões num único ponto por elemento (`NumIntegrationPoints = 1`), mas monta a matriz de rigidez com 8 pontos. A força interna calculada pelas tensões não equilibra `K·u` nos nós perto da ponta (os modos de ampulheta não aparecem no ponto central), e o resíduo não se anularia.
+
+A primeira versão desta correção (commit `b6affc8`) aplicava `p + σyy` só na primeira carga de cada elemento e depois só `Δp`. Ela não derivava, mas a parte da carga que caía nos nós restritos da frente ia para as reações e não era liberada quando eles se soltavam. Numa fratura em propagação, isso distorcia o perfil de abertura (veja a seção 5 do relatório PKN).
 
 ---
 
@@ -138,13 +140,13 @@ O erro em relação a Sneddon tem duas origens: a discretização (elementos lin
 
 | Domínio | dx (m) | Abertura no centro | Perfil (L2) | Volume |
 |---|---|---|---|---|
-| 10 L (50 m) | 0,5 | −3,29 % | 4,00 % | −5,22 % |
-| 10 L (50 m) | 0,25 | −2,45 % | 2,90 % | −3,40 % |
-| 10 L (50 m) | 0,125 | −2,02 % | 2,28 % | −2,49 % |
-| 20 L (100 m) | 0,5 | −2,26 % | 3,01 % | −4,21 % |
-| **20 L (100 m)** | **0,25** | **−1,39 %** | **1,90 %** | **−2,35 %** |
-| 20 L (100 m) | 0,125 | −0,94 % | 1,25 % | −1,42 % |
-| 40 L (200 m) | 0,25 | −1,12 % | 1,65 % | −2,08 % |
+| 10 L (50 m) | 0,5 | −3,33 % | 4,05 % | −5,27 % |
+| 10 L (50 m) | 0,25 | −2,49 % | 2,95 % | −3,45 % |
+| 10 L (50 m) | 0,125 | −2,06 % | 2,33 % | −2,55 % |
+| 20 L (100 m) | 0,5 | −2,30 % | 3,06 % | −4,26 % |
+| **20 L (100 m)** | **0,25** | **−1,43 %** | **1,95 %** | **−2,40 %** |
+| 20 L (100 m) | 0,125 | −0,98 % | 1,30 % | −1,48 % |
+| 40 L (200 m) | 0,25 | −1,16 % | 1,70 % | −2,13 % |
 
 A linha em negrito é a configuração do teste automatizado.
 
@@ -154,17 +156,16 @@ A linha em negrito é a configuração do teste automatizado.
 
 | Verificação | Critério | Valor obtido |
 |---|---|---|
-| Pressão na fratura | uniforme e igual à do poço (±0,5 %) | sem variação nos dígitos gravados; Δp = 1000,02 kPa |
-| Abertura no centro | ±2 % de Sneddon | −1,39 % |
-| Perfil da abertura | erro L2 < 3 % | 1,90 % |
-| Volume da fratura | ±3 % de Sneddon | −2,35 % |
+| Pressão na fratura | uniforme e igual à do poço (±1 %) | variação de 5,1 kPa (0,5 %); média 996,5 kPa |
+| Abertura no centro | ±2 % de Sneddon | −1,43 % |
+| Perfil da abertura | erro L2 < 3 % | 1,95 % |
+| Volume da fratura | ±3 % de Sneddon | −2,40 % |
 | Face fora da fratura | `uy = 0` | 0 |
 | Convergência | o erro diminui de dx = 0,5 m para 0,25 m | sim, nas três métricas |
 | Pressão mantida por 3 passos | variação de `uy(0)` < 0,1 % | idêntico em todos os dígitos gravados |
 
 ```bash
-make -C iGeo_vrs2.0 test               # 7 testes, cerca de 17 s
-make -C iGeo_vrs2.0 test MODE=debug    # com verificação de limites, cerca de 70 s
+ctest --test-dir build -L sneddon --output-on-failure   # ou: make -C iGeo_vrs2.0 test
 ```
 
 A versão anterior falha no teste de pressão mantida. Com o módulo de Young 10 % errado no `.geo`, falham os testes de abertura, perfil e volume, o que confirma que os critérios detectam erros reais.
@@ -173,18 +174,17 @@ A versão anterior falha no teste de pressão mantida. Com o módulo de Young 10
 
 ## 5. Efeito em fraturas que se propagam
 
-A correção também muda simulações em que a fratura cresce. O caso [`Simulation_cases/M3_injection_test.geo`](../../Simulation_cases/M3_injection_test.geo) foi rodado com as duas versões. É uma pré-fratura com critério de propagação por dano (`#CDM_FRACTURE`), geomecânica e injeção a vazão crescente, numa malha de 60 mil elementos. O caso simula 360 min e levaria horas, então as simulações foram interrompidas depois de cerca de 70 minutos de processamento.
+As correções também mudam simulações em que a fratura cresce. O caso [`Simulation_cases/M3_injection_test.geo`](../../Simulation_cases/M3_injection_test.geo) foi rodado com a versão original e com a versão atual. É uma pré-fratura com critério de propagação por dano (`#CDM_FRACTURE`, Gc = 455 J/m²), geomecânica e injeção a vazão crescente, numa malha de 60 mil elementos. O caso simula 360 min. A versão original foi interrompida em 35 min de tempo simulado; a atual, em 150 min.
 
 ![Propagação no M3_injection_test](figuras/fig7_propagacao.svg)
 
-*Figura 7 — Pressão máxima no modelo durante o 2º passo de injeção, até 22 min de tempo simulado. Os traços na base marcam os subpassos em que a fratura avançou.*
+*Figura 7 — Pressão máxima no modelo até 35 min de tempo simulado. Os traços na base marcam os subpassos em que a fratura avançou.*
 
-- No fim do 1º passo (0,1 min), a fratura é idêntica nas duas versões: 1 m de comprimento, topo em −2493,53 m e base em −2495,59 m.
-- Até cerca de 2 min, a pressão é a mesma.
-- Depois, na **versão anterior**, a pressão sobe de forma suave até 30,5 MPa, e a fratura não volta a se propagar (1 evento, só no início).
-- Na **versão corrigida**, a fratura avança 43 vezes em 22 min. A cada avanço a pressão cai e volta a subir (dente de serra), e em 20 min ela está em 27,0 MPa.
+- **Versão original:** a pressão sobe de forma suave até 30,5 MPa em 20 min, e a fratura avança uma única vez, no início.
+- **Versão atual:** a curva de pressão praticamente coincide com a da original (30,5 MPa em 20 min), e a fratura não avança em 150 min de tempo simulado.
+- **Primeira versão desta correção** (carga incremental, commit `b6affc8`): a fratura avançava 43 vezes em 22 min, e a pressão caía em dente de serra até 27,0 MPa em 20 min.
 
-A explicação mais provável: na versão anterior, a carga espúria da deriva mantinha a fratura aberta além do equilíbrio elástico, o que aumentava seu volume e absorvia o fluido injetado sem propagar. Como não há solução de referência para este caso, não dá para afirmar qual comportamento está correto só com esta comparação. O resultado mostra que **a correção muda os resultados de propagação** e que eles precisam ser validados.
+O número de avanços mudou a cada versão do carregamento da face. A integral J que decide a propagação usa a tensão e a deformação no centro do elemento da ponta, e responde fortemente a como a carga chega nos nós da frente. Sem uma solução de referência para este caso, não dá para dizer qual comportamento está correto. A verificação PKN ([`docs/relatorio_pkn/`](../relatorio_pkn/README.md)) mostra que o critério atual não reproduz uma propagação com tenacidade desprezível.
 
 ---
 
@@ -197,7 +197,7 @@ A explicação mais provável: na versão anterior, a carga espúria da deriva m
 ## 7. Limitações e próximos passos
 
 1. **Validar a propagação.** Reproduzir uma fratura KGD (deformação plana, vazão constante, regime de tenacidade ou de viscosidade) e comparar com as soluções de referência (Detournay, 2004; benchmark de Lecampion et al., 2013). O critério de propagação também usa grandezas médias do elemento da ponta (integral J calculada com σyy e εyy do elemento), e pode ter a mesma sensibilidade à malha que foi corrigida aqui.
-2. **Vazão controlada em rocha impermeável.** O acoplamento sequencial fluxo → mecânica diverge nesse regime. Uma solução seria incluir a complacência da fratura na equação de fluxo (acoplamento implícito) ou iterar fluxo e mecânica dentro do passo até convergir o volume.
+2. **Vazão controlada em rocha impermeável.** Resolvido na verificação PKN: o aumento de volume da fratura entrou no balanço de massa do fluxo ([`docs/relatorio_pkn/`](../relatorio_pkn/README.md)).
 3. **Comparar com os resultados do autor.** Rodar os casos de `Simulation_cases/` com e sem a correção no build Intel original e comparar com os resultados publicados.
 
 ---
@@ -206,18 +206,18 @@ A explicação mais provável: na versão anterior, a carga espúria da deriva m
 
 ### 8.1 PDF do relatório
 
-O [`Makefile`](Makefile) desta pasta converte este README em PDF com pandoc e xelatex (MacTeX ou TeX Live):
+O [`Makefile`](Makefile) desta pasta (com as regras comuns de [`docs/relatorio.mk`](../relatorio.mk)) converte este README em PDF com pandoc e xelatex (MacTeX ou TeX Live):
 
 ```bash
 # gera docs/relatorio_sneddon/build/relatorio_sneddon.pdf
 make -C docs/relatorio_sneddon
 ```
 
-No PDF, as figuras entram pelas versões `.pdf` de `figuras/`, versionadas junto com as `.svg`, e o filtro [`pdf/figuras_pdf.lua`](pdf/figuras_pdf.lua) junta cada imagem com a sua legenda. As fontes padrão (Palatino e Menlo) são do macOS. Em outro sistema, indique fontes instaladas que tenham os símbolos gregos, por exemplo, no Linux, `make FONTE="DejaVu Serif" FONTE_MONO="DejaVu Sans Mono"`.
+No PDF, as figuras entram pelas versões `.pdf` de `figuras/`, versionadas junto com as `.svg`, e o filtro [`docs/pdf/figuras_pdf.lua`](../pdf/figuras_pdf.lua), comum aos relatórios, junta cada imagem com a sua legenda. As fontes padrão (Palatino e Menlo) são do macOS. Em outro sistema, indique fontes instaladas que tenham os símbolos gregos, por exemplo, no Linux, `make FONTE="DejaVu Serif" FONTE_MONO="DejaVu Sans Mono"`.
 
 ### 8.2 Figuras
 
-As figuras são geradas por [`gerar_figuras.py`](gerar_figuras.py) a partir de simulações feitas com o executável atual (`iGeo_vrs2.0/build/iGeo`) e com um executável compilado a partir da versão anterior de `HydraulicFractureModel.f90` (commit `b8828cb`). A docstring do script descreve a estrutura esperada da pasta com as simulações (`<pasta>`):
+As figuras são geradas por [`gerar_figuras.py`](gerar_figuras.py) a partir de simulações feitas com o executável atual (`iGeo_vrs2.0/build/iGeo`) e com um executável compilado a partir da versão anterior de `HydraulicFractureModel.f90` (commit `b8828cb`, pastas `rel/antigo` e `prop/antigo`). A docstring do script descreve a estrutura esperada da pasta com as simulações (`<pasta>`):
 
 - o caso do teste com 6 passos de pressão mantida;
 - as variantes de malha e de domínio do estudo de convergência;

@@ -1,11 +1,11 @@
-# Metadados do pandoc para o relatório em PDF (usado pelo Makefile).
+# Metadados do pandoc para os relatórios em PDF (usado por docs/relatorio.mk).
 lang: pt-BR
 documentclass: article
 papersize: a4
 fontsize: 11pt
 geometry: margin=2.5cm
 linestretch: 1.15
-# Fontes (definidas no Makefile): Palatino e Menlo, do macOS, têm os símbolos
+# Fontes (definidas em docs/relatorio.mk): Palatino e Menlo, do macOS, têm os símbolos
 # usados no texto (σ, ν, Δ, ≈, ≥, ⁻⁵); a seta → vem do modo matemático.
 # Em outro sistema: make FONTE="DejaVu Serif" FONTE_MONO="DejaVu Sans Mono" (por exemplo).
 colorlinks: true

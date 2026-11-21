@@ -45,10 +45,11 @@
         REAL(8),ALLOCATABLE:: Aperture(:),Aperture0(:)      !elemento based
         REAL(8),ALLOCATABLE:: NodeAperture0(:)              !nodal initial aperture
         REAL(8),ALLOCATABLE:: FluidPressure(:)
-        !Pressão do fluido já aplicada como carga na face de cada elemento
-        !(carregamento incremental; veja UpdateHydraulicFracture).
-        REAL(8),ALLOCATABLE:: AppliedPressure(:)
-        LOGICAL,ALLOCATABLE:: FaceLoaded(:)
+        !Forças nodais (direção y) dos nós da face, para a carga da face em
+        !UpdateHydraulicFracture: força interna das tensões iniciais menos K*u
+        !no mesmo instante (NodeInitialForce) e soma das outras cargas externas
+        !(poroelástica, térmica) já aplicadas no nó (NodeOtherLoad).
+        REAL(8),ALLOCATABLE:: NodeInitialForce(:),NodeOtherLoad(:)
         INTEGER,ALLOCATABLE:: JfractureFront(:),KfractureFront(:)
         REAL(8),ALLOCATABLE:: Jintegral(:),J_h(:)
         REAL(8),ALLOCATABLE:: cumJintegral(:,:,:)           !(1,...NZ,...NX) - Z up J-Integral
@@ -67,7 +68,7 @@
   
   
     ! UPDATES THE HYDRAULIC FRACTURE MODEL - CONTINUOS DAMAGE MODEL.
-    SUBROUTINE UpdateHydraulicFracture(HFmodel,GeomechanicalModel,Load)
+    SUBROUTINE UpdateHydraulicFracture(HFmodel,GeomechanicalModel,Load,Ka,Kia,Kja)
       
       USE NumericalLib
       USE NumericalUtilities
@@ -78,57 +79,53 @@
       TYPE(HydraulicFracture),INTENT(IN OUT):: HFmodel
       TYPE(Model),INTENT(IN OUT):: GeomechanicalModel
       REAL(8),INTENT(IN OUT):: Load(0:)
+      REAL(8),INTENT(IN):: Ka(:)                 !matriz de rigidez (CSR) usada pelo solver mecânico.
+      INTEGER,INTENT(IN):: Kia(:),Kja(:)
       
-      INTEGER,ALLOCATABLE:: g(:),num(:)
-      REAL(8):: normal(3)
-      REAL(8):: damageCutoff = 0.50,&
-                minAperture = 1.0E-8, &
-                maxAperture = 1.0E-2
-      
-      INTEGER:: i,j,k,iel,nip,dof
-      
-      REAL(8):: area, pp,  p, fy, force(3)
-      REAL(8):: syy,sxy,szy,sn,an
-      
-      INTEGER:: ix,iz,NX,NZ
-      
-      REAL(8):: youngNormal
-      !LOGICAL:: fractureClosing
-      
-      ALLOCATE( g(24),num(8) )
+      INTEGER:: g(4),num(8)
+      INTEGER:: i,j,iel,nip,nn,dof
+      REAL(8):: area,p,an,residual
+      REAL(8),ALLOCATABLE:: targetForce(:),Ku(:)
+      INTEGER,ALLOCATABLE:: faceElements(:),openFaceElements(:)
       
       nip = GeomechanicalModel%NumIntegrationPoints
+      nn = GeomechanicalModel%NumNodes
       
+      ALLOCATE( targetForce(nn),faceElements(nn),openFaceElements(nn),&
+                Ku(GeomechanicalModel%NumEquations) )
+      targetForce = 0.0
+      faceElements = 0
+      openFaceElements = 0
       
-      ! FRACTURE STRESS ANALYSIS-----------------------------------------
-      ! Update element constitutive model.
-      ! Update fracture load.
+      ! CARGA NA FACE DA FRATURA (RESÍDUO NODAL)--------------------------
+      ! Em cada nó livre da face (todos os elementos da face que o contêm
+      ! abertos), a carga aplicada é
+      !     R = F_fluido - (F_inicial + (K*u)_y) + F_outras
+      ! F_fluido: força da pressão do fluido, p * área / 4 de cada elemento
+      !           aberto que contém o nó;
+      ! F_inicial + (K*u)_y: força interna atual do nó (tensões iniciais mais
+      !           o produto da matriz de rigidez do solver pelo deslocamento);
+      ! F_outras: outras cargas externas já aplicadas no nó (poroelástica,
+      !           térmica), acumuladas em NodeOtherLoad.
+      ! Num nó livre em equilíbrio, R é só a variação da pressão do fluido:
+      ! não há deriva. Num nó recém-liberado (fratura que se propaga), R
+      ! inclui exatamente a reação que o nó transmitia (força de liberação).
+      ! A força interna vem de K*u, e não das tensões, porque as tensões são
+      ! calculadas num único ponto por elemento (NumIntegrationPoints = 1) e
+      ! a matriz de rigidez com 8: a força interna calculada pelas tensões
+      ! não equilibra K*u nos nós perto da ponta.
+      ! Antes, a tração da face era estimada pela tensão média do elemento:
+      ! reaplicada a cada passo, o resíduo nunca se anulava no elemento da
+      ! ponta (deriva no caso de Sneddon); aplicada uma única vez, a parte da
+      ! carga que caía nos nós restritos da frente ia para as reações e não
+      ! era liberada quando eles se soltavam (fratura em propagação, PKN).
       DO i=1,HFmodel%NumElements
         
         iel = HFmodel%FracToSolidElement(i)
+        num(1:4) = HFmodel%ListOfyyNodes(:,i)
+        faceElements(num(1:4)) = faceElements(num(1:4)) + 1
         
-        !J-INTEGRAL------------------------------------------------------
-        !HFmodel%Jintegral(i) = HFmodel%J_h(i) * GeomechanicalModel%YYplasticStrainDesityenergy(iel)
-        !IF( HFmodel%Jintegral(i) > GeomechanicalModel%Gc(iel) )THEN
-        !  HFmodel%OpenFracElements(i) = .TRUE.
-        !  GeomechanicalModel%IsFractured(iel) = .TRUE.
-        !END IF
-        
-        !STRUTURAL LOAD AND B.C.-----------------------------------------
-        !IF( HFmodel%OpenFracElements(i) .AND. GeomechanicalModel%ElementIJK(3,iel)==1 )THEN
         IF( HFmodel%OpenFracElements(i) .AND. HFmodel%ActiveToFlow(i) .OR. HFmodel%Aperture0(i)>0.0 )THEN
-            
-          num = GeomechanicalModel%ElementNodes(:,iel)    
-          area = HFmodel%AreaJ(i)                             !element YY stress.
-          p = HFmodel%FluidPressure(i)                        !fracture pressure.
-          pp = GeomechanicalModel%ElementAVGporepressure(iel) !!porous media average pressure.
-          
-          !normal stress (YY).
-          sn = 0.0
-          DO j=1,GeomechanicalModel%NumIntegrationPoints
-            sn = sn + GeomechanicalModel%EffectiveStressTensor(2,j,iel)
-          END DO
-          sn = sn/GeomechanicalModel%NumIntegrationPoints - GeomechanicalModel%BiotCoef(iel) * pp
           
           !Y DOFs
           g(1) = GeomechanicalModel%NodeDOFs(2,num(1))
@@ -139,36 +136,29 @@
           !Aperture 
           an = SUM(GeomechanicalModel%Displacement(g(1:4))) / 4.
           HFmodel%Aperture(i) = HFmodel%Aperture0(i) + an
-          !IF(HFmodel%Aperture(i)<1.E-5) HFmodel%Aperture(i) = 1.E-5
           GeomechanicalModel%FracAperture(iel) = HFmodel%Aperture(i)
-          
-          !Força na face da fratura.
-          !- Primeira carga do elemento (quando ele abre): libera a tensão que
-          !  a rocha transmitia pela face, fy = (p + sn) * area. Na pré-fratura
-          !  sob tensão uniforme isso é exatamente (p - Shmin) * area.
-          !- Cargas seguintes: só a variação da pressão do fluido desde a última
-          !  carga, fy = (p - p_aplicada) * area. Antes o resíduo (p + sn) era
-          !  reaplicado a cada passo, com sn = tensão média do elemento; no
-          !  elemento da ponta essa média nunca chega a -p (tensão singular),
-          !  o resíduo não se anulava e a abertura derivava acima da solução
-          !  elástica mesmo com pressão constante.
-          IF( HFmodel%FaceLoaded(i) )THEN
-            fy = (p - HFmodel%AppliedPressure(i)) * area * HFmodel%Damage(i)
-          ELSE
-            fy = (p + sn) * area * HFmodel%Damage(i)
-          END IF
-          IF ( .NOT.HFmodel%FracClosure .AND. fy<0.0 )THEN
-            fy = 0.0     !to avoid oscilating solution in prescribed presseure constrained simulations.
-          ELSE
-            HFmodel%AppliedPressure(i) = p
-            HFmodel%FaceLoaded(i) = .TRUE.
-          END IF
-          force = 0
-          force(2) = fy
-          Load(g(1:4)) = Load(g(1:4)) + force(2)/4.0
           
         END IF
         
+        IF( HFmodel%OpenFracElements(i) )THEN
+          openFaceElements(num(1:4)) = openFaceElements(num(1:4)) + 1
+          area = HFmodel%AreaJ(i)
+          p = HFmodel%FluidPressure(i)                        !fracture pressure.
+          targetForce(num(1:4)) = targetForce(num(1:4)) + p * area * HFmodel%Damage(i) / 4.0
+        END IF
+        
+      END DO
+      
+      !Força interna elástica atual: K*u (mesma matriz do solver).
+      CALL mkl_dcsrgemv('N', GeomechanicalModel%NumEquations, Ka, Kia, Kja, GeomechanicalModel%Displacement, Ku)
+      
+      DO i=1,nn
+        IF( faceElements(i)>0 .AND. openFaceElements(i)==faceElements(i) )THEN
+          dof = GeomechanicalModel%NodeDOFs(2,i)
+          residual = targetForce(i) - (HFmodel%NodeInitialForce(i) + Ku(dof)) + HFmodel%NodeOtherLoad(i)
+          IF ( .NOT.HFmodel%FracClosure .AND. residual<0.0 ) residual = 0.0     !to avoid oscilating solution in prescribed presseure constrained simulations.
+          Load(dof) = Load(dof) + residual
+        END IF
       END DO
       
     RETURN
@@ -236,22 +226,32 @@
           coord(:,1) = GeomechanicalModel%X(num)
           coord(:,2) = GeomechanicalModel%Z(num)
           
-          aperture = HFmodel%Aperture(fracElement) !- SUM(GeomechanicalModel%Displacement(g))/nod
+          !Abertura total da fratura (lei cúbica). O modelo representa só o
+          !lado y >= 0 da fratura (simetria em y = 0): o deslocamento da face
+          !(Aperture - Aperture0) é a MEIA abertura, e o modelo conduz metade
+          !da vazão do canal. Por isso:
+          !    w = Aperture0 + 2 * uy        (abertura total)
+          !    k = w**2 / 12,  área = (w/2) * largura
+          !Antes a meia abertura entrava como se fosse a total, e a
+          !transmissibilidade ficava 4 vezes menor (uy**3/12 em vez de uy**3/3).
+          aperture = HFmodel%Aperture0(fracElement) + &
+                     2.0 * (HFmodel%Aperture(fracElement) - HFmodel%Aperture0(fracElement))
           IF(aperture < minAperture .AND. aperture>0.0)THEN
             aperture = minAperture
           ELSEIF(aperture > maxAperture)THEN
             aperture = maxAperture
           ELSE
           END IF
-          
+
           PermTensor = 0.0
           PermTensor(1,1) = aperture**2.0 / 12
           PermTensor(2,2) = PermTensor(1,1)
-          
+
           LX = ABS(coord(1,1)-coord(4,1))
           LZ = ABS(coord(1,2)-coord(2,2))
-          AX = aperture * LZ / 2.0
-          AZ = aperture * LX / 2.0
+          !metade do canal (w/2) em cada uma das duas arestas do elemento.
+          AX = 0.5 * aperture * LZ / 2.0
+          AZ = 0.5 * aperture * LX / 2.0
           
           !1-2
           counter=counter+1
@@ -498,6 +498,20 @@
       END DO
       
       !UPDATING DISPLACEMENTS CONTRAINTS VECTOR--------------------------
+      !Um nó da face só é liberado quando TODOS os elementos da face que o
+      !contêm estão abertos (mesma regra de BuildHydraulicFractureModel).
+      !Antes os contadores acima só somavam os elementos abertos nesta
+      !chamada, eram sempre iguais, e os 4 nós de cada elemento recém-aberto
+      !eram liberados, inclusive os compartilhados com elementos intactos:
+      !a frente da fratura ficava solta um elemento à frente e a fratura
+      !crescia uma camada acima e abaixo das camadas com #CDM_FRACTURE.
+      freeNodeCounter = 0
+      nodeCounter = 0
+      DO i=1,HFmodel%NumElements
+        num(1:4) = HFmodel%ListOfyyNodes(:,i)
+        nodeCounter(num(1:4)) = nodeCounter(num(1:4)) + 1
+        IF( HFmodel%OpenFracElements(i) ) freeNodeCounter(num(1:4)) = freeNodeCounter(num(1:4)) + 1
+      END DO
       DO i=1,numNodes
         IF(nodeCounter(i).NE.0 .AND. freeNodeCounter(i)==nodeCounter(i) )THEN
           dof = GeomechanicalModel%NodeDOFs(2,i)
@@ -641,10 +655,10 @@
                 HFmodel%DJ(HFmodel%NumElements),&
                 HFmodel%ListOfyyNodes(4,HFmodel%NumElements),&
                 HFmodel%ActiveToFlow(HFmodel%NumElements),&
-                HFmodel%AppliedPressure(HFmodel%NumElements),&
-                HFmodel%FaceLoaded(HFmodel%NumElements)    )
-      HFmodel%AppliedPressure = 0.0
-      HFmodel%FaceLoaded = .FALSE.
+                HFmodel%NodeInitialForce(GeomechanicalModel%NumNodes),&
+                HFmodel%NodeOtherLoad(GeomechanicalModel%NumNodes)    )
+      HFmodel%NodeInitialForce = 0.0
+      HFmodel%NodeOtherLoad = 0.0
       HFmodel%Aperture = 0.0
       HFmodel%Aperture0 = 0.0
       HFmodel%NodeAperture0 = 0.0

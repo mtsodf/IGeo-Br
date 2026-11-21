@@ -2,6 +2,7 @@
 #
 #   ctest --test-dir build --output-on-failure
 #   ctest --test-dir build -L sneddon -V        # só os testes de Sneddon
+#   ctest --test-dir build -L pkn -V            # só o teste PKN
 #
 # Cada teste roda o executável iGeo deste build (variável IGEO_BIN) numa
 # pasta temporária e compara a saída com a solução de referência.
@@ -67,3 +68,8 @@ igeo_teste_python(sneddon.solucao_analitica test_sneddon_injection
                   TesteInjecaoSneddon LABELS sneddon)
 igeo_teste_python(sneddon.convergencia_e_pressao_mantida test_sneddon_injection
                   TesteConvergenciaEPressaoMantida LABELS sneddon)
+
+# Fratura PKN de altura fixa propagada a vazão constante: hipóteses do PKN e
+# solução de Nordgren (tests/test_pkn_injection.py, caso em tests/pkn_injection/).
+igeo_teste_python(pkn.injecao_vazao_constante test_pkn_injection
+                  TesteFraturaPKN LABELS pkn)

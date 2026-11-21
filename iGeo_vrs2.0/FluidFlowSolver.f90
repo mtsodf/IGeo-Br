@@ -41,6 +41,10 @@
 
         REAL(8),ALLOCATABLE:: NodeVolume(:),NodeFracVolume(:),ElementVolume(:)
 
+        !Volume da fratura já contabilizado no balanço de massa do fluxo, por
+        !nó (veja "BALANÇO DE MASSA DA FRATURA" em FlowStepSolution).
+        REAL(8),ALLOCATABLE:: FracVolumeAccounted(:)
+
         !Node pair trasmissibility.
         REAL(8),ALLOCATABLE:: TransArrayINI(:)    !INITIAL transmissibility array (all nodes transmissibilities).
         REAL(8),ALLOCATABLE:: TransArray(:)       !CURRENT transmissibility array
@@ -149,6 +153,15 @@
         REAL(8):: totalCompressibility
         REAL(8):: HydraulicPotential
         REAL(8),ALLOCATABLE:: fractureUnbalVolume(:)        !fracture dilation due its displacement on mechanical step.
+
+        !Balanço de massa da fratura.
+        REAL(8),ALLOCATABLE:: fracCompliance(:),&           !dV/dp estimado de cada nó da face aberta (m3/Pa).
+                              fracMismatch(:),&             !volume da mecânica ainda não contabilizado (m3).
+                              Pstart(:)                     !pressão no início da chamada.
+        INTEGER,ALLOCATABLE:: faceElements(:),openFaceElements(:)
+        LOGICAL:: mismatchPending
+        REAL(8):: zLow,zHigh,xLow,xHigh,charLength,planeStrainModulus
+        INTEGER:: nOpen,fracEl,solidEl
 
         REAL(8):: min,temp
 
@@ -277,6 +290,74 @@
         END DO
 
         !************************************************************************
+        !BALANÇO DE MASSA DA FRATURA.
+        !************************************************************************
+        !O fluido que entra na fratura é o aumento do seu volume, dV/dt. Como a
+        !mecânica é resolvida depois do fluxo (acoplamento sequencial), o volume
+        !é escrito como
+        !    V(p) = V_mec + C_f * (p - p_inicio)
+        !com V_mec = volume da fratura da última solução mecânica (calculado
+        !acima, em NodeFracVolume) e C_f = complacência estimada de cada nó da
+        !face aberta. O termo C_f entra no armazenamento, implícito na pressão.
+        !A diferença entre o volume da mecânica e o volume já contabilizado nas
+        !chamadas anteriores (fracMismatch) entra como fonte no primeiro subpasso
+        !aceito, de modo que o volume de fluido na fratura acompanha o volume da
+        !mecânica, com um passo de atraso, e a massa é conservada.
+        !Sem esse termo, a injeção a vazão controlada numa rocha pouco permeável
+        !não tinha para onde ir além da compressibilidade do fluido, e a pressão
+        !divergia.
+        !C_f vem da solução de deformação plana, u_max = (1-nu^2) p Lc / E, com
+        !Lc = MIN(altura, 2 x comprimento) da região aberta. O esquema é estável
+        !para C_f maior que metade da complacência real; ele só afeta a
+        !velocidade com que a diferença entre os volumes é corrigida.
+        ALLOCATE( fracCompliance(numNodes),fracMismatch(numNodes),Pstart(numNodes) )
+        fracCompliance = 0.0
+        fracMismatch = 0.0
+        Pstart = Porepressure
+        mismatchPending = .FALSE.
+        IF( HFmodel%ContainsFracModel )THEN
+            ALLOCATE( faceElements(numNodes),openFaceElements(numNodes) )
+            faceElements = 0
+            openFaceElements = 0
+            nOpen = 0
+            planeStrainModulus = 0.0
+            zLow = 1.0E30
+            zHigh = -1.0E30
+            xLow = 1.0E30
+            xHigh = -1.0E30
+            DO fracEl=1,HFmodel%NumElements
+                num(1:4) = HFmodel%ListOfyyNodes(:,fracEl)
+                faceElements(num(1:4)) = faceElements(num(1:4)) + 1
+                IF( HFmodel%OpenFracElements(fracEl) )THEN
+                    openFaceElements(num(1:4)) = openFaceElements(num(1:4)) + 1
+                    nOpen = nOpen + 1
+                    solidEl = HFmodel%FracToSolidElement(fracEl)
+                    planeStrainModulus = planeStrainModulus + &
+                        GeomechanicalModel%TransverIsotropicProps(solidEl)%E1 / &
+                        (1.0 - GeomechanicalModel%TransverIsotropicProps(solidEl)%n1**2)
+                    DO j=1,4
+                        IF( GeomechanicalModel%Z(num(j)) < zLow ) zLow = GeomechanicalModel%Z(num(j))
+                        IF( GeomechanicalModel%Z(num(j)) > zHigh ) zHigh = GeomechanicalModel%Z(num(j))
+                        IF( GeomechanicalModel%X(num(j)) < xLow ) xLow = GeomechanicalModel%X(num(j))
+                        IF( GeomechanicalModel%X(num(j)) > xHigh ) xHigh = GeomechanicalModel%X(num(j))
+                    END DO
+                END IF
+            END DO
+            IF( nOpen > 0 )THEN
+                planeStrainModulus = planeStrainModulus / nOpen
+                charLength = zHigh - zLow
+                IF( 2.0*(xHigh - xLow) < charLength ) charLength = 2.0*(xHigh - xLow)
+                DO i=1,numNodes
+                    !nó livre: todos os elementos da face que o contêm estão abertos.
+                    IF( faceElements(i) > 0 .AND. openFaceElements(i) == faceElements(i) ) &
+                        fracCompliance(i) = HFmodel%NodeArea(i) * charLength / planeStrainModulus
+                END DO
+            END IF
+            fracMismatch = FlowModel%NodeFracVolume - FlowModel%FracVolumeAccounted
+            mismatchPending = .TRUE.
+        END IF
+
+        !************************************************************************
         !TIME STEP SOLVER.
         !************************************************************************
         t(0) = 0.00
@@ -367,10 +448,19 @@
                 V1 = FlowModel%NodeFracVolume(i)            !fracture fluid volume
 
                 !C(i) = - V * totalCompressibility / Bw(i)
-                C(i) = -(V0*totalCompressibility + V1*Cw) / Bw(i)
+                !fracCompliance: dV/dp da fratura (balanço de massa da fratura).
+                C(i) = -(V0*totalCompressibility + V1*Cw + fracCompliance(i)) / Bw(i)
 
                 RHS(i) = RHS(i) + C(i) * P0(i) / dt
             END DO
+
+            !Volume da fratura aberto pela mecânica e ainda não contabilizado:
+            !sai do fluido no primeiro subpasso aceito.
+            IF( mismatchPending )THEN
+                DO i=1,numNodes
+                    RHS(i) = RHS(i) + fracMismatch(i) / (Bw(i) * dt)
+                END DO
+            END IF
 
             !RATES-----------------------------------------------------------------
             temp = 0.0
@@ -453,6 +543,7 @@
             !COMPUTE RATES---------------------------------------------------------
             CALL mkl_dcsrgemv('N', numNodes, csrA_c,FlowModel%ia,FlowModel%ja, solution(1:), FlowModel%NodeFlows)
             FlowModel%NodeFlows = FlowModel%NodeFlows - C(1:)*P0(1:)/dt
+            IF( mismatchPending ) FlowModel%NodeFlows = FlowModel%NodeFlows - fracMismatch/(Bw*dt)
             Rates = 0.0
             DO i=1,numNodes
                 IF( FlowModel%InjNode(i) ) Rates(i) = FlowModel%NodeFlows(i)
@@ -475,6 +566,7 @@
             ELSEIF( maxPressureVariation <= maxAllowedPressureVariation )THEN
                     reportData%stepResult = 'P'
                     Porepressure = solution(1:)
+                    mismatchPending = .FALSE.
 
                     FlowModel%AverageTotalRate = FlowModel%AverageTotalRate + FlowModel%TotalInjectionRate * dt
 
@@ -514,6 +606,10 @@
         END DO!******************************************************************
 
         FlowModel%AverageTotalRate = FlowModel%AverageTotalRate / t(0)
+
+        !Volume da fratura contabilizado até o fim desta chamada.
+        IF( HFmodel%ContainsFracModel ) FlowModel%FracVolumeAccounted = &
+            FlowModel%NodeFracVolume + fracCompliance * (Porepressure - Pstart)
 
         RETURN
         END SUBROUTINE
@@ -1541,8 +1637,10 @@
 
         ALLOCATE( FlowModel%Accum(Nnodes),FlowModel%NodeDepth(Nnodes),&
             FlowModel%NodeVolume(Nnodes),FlowModel%NodeFracVolume(Nnodes),&
+            FlowModel%FracVolumeAccounted(Nnodes),&
             FlowModel%ElementVolume(Ncells),FlowModel%NodalPoreCompressbility(Nnodes),&
             FlowModel%Rate(Nnodes),FlowModel%PressureBC_flag(Nnodes) )
+        FlowModel%FracVolumeAccounted = 0.0
         !, FlowModel%PressureBC(Nnodes)
         FlowModel%Rate = 0.0
         !FlowModel%PressureBC = 0.0

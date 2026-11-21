@@ -6,8 +6,8 @@ iGeo_vrs2.0/build/
 /build-*/
 *.dSYM/
 
-# Relatório em PDF (docs/relatorio_sneddon/Makefile)
-docs/relatorio_sneddon/build/
+# Relatórios em PDF (docs/relatorio.mk)
+docs/*/build/
 
 # Build com o compilador Intel (Build.bat)
 *.exe

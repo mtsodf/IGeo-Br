@@ -1,4 +1,4 @@
--- Filtro pandoc para o relatório em PDF (usado pelo Makefile).
+-- Filtro pandoc para os relatórios em PDF (usado por docs/relatorio.mk).
 --  * troca as figuras .svg (usadas no GitHub) pelas versões .pdf geradas
 --    por gerar_figuras.py, que o LaTeX inclui sem conversão;
 --  * faz as imagens ocuparem a largura do texto;

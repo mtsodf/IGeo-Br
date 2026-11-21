@@ -352,6 +352,25 @@
     CALL BuildHydraulicFractureModel( HFmodel,Problem,GeomechanicalModel,&
                                       StructuralBC%ListOfRestrictedDOFs)
     
+    !Força interna inicial dos nós da face, para a carga da face em
+    !UpdateHydraulicFracture (força interna = inicial + K*u): força das
+    !tensões efetivas atuais, menos K*u, menos a carga poroelástica da
+    !pressão de poros atual (tração total = sigma' - Biot*p).
+    IF( HFmodel%ContainsFracModel .AND. Problem%Structural_flag )THEN
+      CALL CalculateInternalForceVector(GeomechanicalModel)
+      du = 0.0
+      CALL mkl_dcsrgemv('N', numEquations, Matrices%Stiff%a, Matrices%Stiff%ia, Matrices%Stiff%ja,&
+                        GeomechanicalModel%Displacement, du(1:))
+      preLoad = 0.0
+      IF( Problem%Flow_flag ) CALL PoroelasticLoad(GeomechanicalModel,GeomechanicalModel%Porepressure,preLoad)
+      DO i=1,GeomechanicalModel%NumNodes
+        j = GeomechanicalModel%NodeDOFs(2,i)
+        IF( j>0 ) HFmodel%NodeInitialForce(i) = GeomechanicalModel%InternalForce(j) - du(j) - preLoad(j)
+      END DO
+      preLoad = 0.0
+      du = 0.0
+    END IF
+    
     !***************************************************************************
     !WATER INJECTION.                                                          *
     !***************************************************************************
@@ -540,8 +559,14 @@
 
           !HYDRAULIC FRACTURE GEOMETRY AND FRACTURE LOAD-----------------------
           IF(HFmodel%ContainsFracModel)THEN
+            !outras cargas externas (poroelástica, térmica) nos nós da face.
+            DO i=1,GeomechanicalModel%NumNodes
+              j = GeomechanicalModel%NodeDOFs(2,i)
+              IF( j>0 ) HFmodel%NodeOtherLoad(i) = HFmodel%NodeOtherLoad(i) + Load(j)
+            END DO
             FractureLoad(:,2) = 0.0
-            CALL UpdateHydraulicFracture(HFmodel,GeomechanicalModel,FractureLoad(:,2))                  ! -> + Load(frac pressure)
+            CALL UpdateHydraulicFracture(HFmodel,GeomechanicalModel,FractureLoad(:,2),&                 ! -> + Load(frac pressure)
+                                         Matrices%Stiff%a,Matrices%Stiff%ia,Matrices%Stiff%ja)
             Load = Load + FractureLoad(:,2)
             FractureLoad(:,1) = FractureLoad(:,2)
           END IF

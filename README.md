@@ -35,7 +35,7 @@ IGeo-Br/
 ├── Simulation_cases/     # Arquivos de entrada (.geo) de casos de teste e validação
 ├── tests/                # Testes de verificação (Python + CTest)
 ├── tools/                # Pós-processamento (perfil da abertura da fratura)
-├── docs/                 # Relatórios (verificação de Sneddon)
+├── docs/                 # Relatórios de verificação (Sneddon, PKN)
 ├── CMakeLists.txt        # Build com CMake (gfortran) e testes com CTest
 ├── requirements.txt      # Dependências Python (testes e pós-processamento)
 └── LICENSE.md            # Licença MIT
@@ -295,9 +295,10 @@ A referência definitiva de cada bloco é a rotina que o lê, em `ProblemDefinit
 Com CMake, depois de compilar (os testes usam o executável do próprio build):
 
 ```bash
-ctest --test-dir build --output-on-failure -j8         # todos os testes, ~20 s
+ctest --test-dir build --output-on-failure -j8         # todos os testes, ~75 s
 ctest --test-dir build -L sneddon -V                   # só os de Sneddon, com a saída
-ctest --test-dir build-debug --output-on-failure -j8   # com o build de debug, ~55 s
+ctest --test-dir build -L pkn -V                       # só o PKN
+ctest --test-dir build-debug --output-on-failure -j8   # com o build de debug
 ```
 
 Com o `Makefile`:
@@ -307,20 +308,24 @@ make -C iGeo_vrs2.0 test               # compila e roda os testes
 make -C iGeo_vrs2.0 test MODE=debug    # com o build de debug (verificação de limites)
 ```
 
-No CTest, cada classe de teste é um teste: `sneddon.solucao_analitica` compara o caso com Sneddon, e `sneddon.convergencia_e_pressao_mantida` verifica a convergência com a malha e a abertura com a pressão mantida. Um teste pulado (executável não encontrado) conta como falha. Os casos usam 4 threads, e o CTest reserva 4 processadores por teste com `-j`.
+No CTest, cada classe de teste é um teste: `sneddon.solucao_analitica` compara o caso com Sneddon, `sneddon.convergencia_e_pressao_mantida` verifica a convergência com a malha e a abertura com a pressão mantida, e `pkn.injecao_vazao_constante` verifica a fratura PKN. Um teste pulado (executável não encontrado) conta como falha. Os casos usam 4 threads, e o CTest reserva 4 processadores por teste com `-j`.
 
 | Caso | Solução de referência | O que é verificado |
 |---|---|---|
 | `tests/sneddon_injection/` | Fratura pressurizada em deformação plana (Sneddon, 1946; Sneddon & Lowengrub, 1969): `w(x) = 4(1−ν²)Δp/E·√(L²−x²)` | Injeção a pressão controlada numa fratura fixa (L = 5 m) em rocha elástica impermeável: pressão uniforme na fratura, abertura no centro (±2 %), perfil (erro L2 < 3 %), volume (±3 %), face fechada fora da fratura, redução do erro com o refino da malha e abertura constante com a pressão mantida |
+| `tests/pkn_injection/` | Fratura PKN de altura fixa (Perkins & Kern, 1961; Nordgren, 1972) | Injeção a vazão constante (100 cP, H = 10 m) com propagação: volume da fratura igual ao injetado (±3 %), altura contida, seção vertical elíptica (L2 < 3 %) com rigidez de deformação plana, lei cúbica local (coeficiente 0,85–1,05) e abertura decrescente do poço para a ponta. A comparação direta com Nordgren (L, w0, pnet a ±10 %) é uma falha esperada: o tratamento da ponta ainda não reproduz o PKN |
 
 Com a malha do teste (dx = 0,25 m, domínio 20L), o erro é de −1,4 % no centro, 1,9 % no perfil e −2,4 % no volume. Ele diminui com o refino da malha e com o tamanho do domínio, porque vem dos elementos lineares e do contorno fixo.
 
-Esse caso levou a duas correções no carregamento da fratura, descritas em detalhe, com figuras, no relatório [`docs/relatorio_sneddon/`](docs/relatorio_sneddon/README.md) (versão em PDF: `make -C docs/relatorio_sneddon`):
+Esses casos levaram a correções no código, descritas em detalhe, com figuras, nos relatórios [`docs/relatorio_sneddon/`](docs/relatorio_sneddon/README.md) e [`docs/relatorio_pkn/`](docs/relatorio_pkn/README.md) (versões em PDF: `make -C docs/relatorio_sneddon` e `make -C docs/relatorio_pkn`):
 
 - `ViscoplasticExplicitySolver.f90`: atribuição a um vetor ainda não alocado (falha de segmentação com gfortran).
-- `HydraulicFractureModel.f90` (`UpdateHydraulicFracture`): antes, a cada passo o código reaplicava como carga na face o resíduo `p + σyy`, com σyy médio do elemento. No elemento da ponta a tensão é singular e o resíduo nunca se anulava, então a abertura crescia de passo em passo mesmo com a pressão constante (+10 % no 6º passo). Agora a primeira carga de cada elemento continua sendo `p + σyy`, que libera a tensão da face, e as seguintes aplicam só a variação da pressão do fluido.
+- `FluidFlowSolver.f90` (`FlowStepSolution`): a equação de fluxo não tinha o aumento de volume da fratura. Na injeção a vazão controlada em rocha impermeável, a pressão divergia, e o volume da fratura chegava a centenas de vezes o volume injetado. Agora o volume da fratura entra no balanço de massa, com uma complacência estimada implícita na pressão e a diferença em relação ao volume da mecânica corrigida no passo seguinte.
+- `HydraulicFractureModel.f90` (`UpdateHFtransmissibilityMatrix`): a lei cúbica usava a meia abertura (o deslocamento da face no modelo com simetria) como se fosse a abertura total, e a condutividade da fratura ficava 4 vezes menor.
+- `HydraulicFractureModel.f90` (`PropagateFracture_TractionDamage`): ao abrir um elemento, os nós que ele compartilha com elementos intactos eram soltos, e a fratura crescia uma camada acima e outra abaixo das camadas com `#CDM_FRACTURE`.
+- `HydraulicFractureModel.f90` (`UpdateHydraulicFracture`): a carga na face usava a tensão média do elemento. Reaplicada a cada passo, fazia a abertura derivar com a pressão constante (+10 % no 6º passo do caso de Sneddon). Aplicada uma única vez, não liberava corretamente os nós da frente numa fratura em propagação. Agora a carga de cada nó livre da face é o resíduo entre a força da pressão do fluido e a força interna `F_inicial + K·u`, calculada com a matriz de rigidez do solver. As tensões não servem para isso, porque são calculadas num único ponto por elemento, e a rigidez com 8.
 
-Limitação que permanece: **injeção a vazão controlada em rocha impermeável não é estável.** O acoplamento sequencial fluxo → mecânica só considera a complacência da fratura no passo seguinte, e a pressão diverge. Por isso o caso usa pressão controlada.
+Limitação que permanece: **a ponta da fratura.** Com Gc pequeno, o critério de propagação (`#CDM_FRACTURE`) abre um elemento por subpasso de acoplamento, e à frente do fluido fica uma zona seca com pressão negativa. No caso PKN, a frente do fluido fica 27 % atrás da solução de Nordgren, e a abertura e a pressão no poço ficam 24 % e 32 % acima. Os resultados de propagação (inclusive dos casos de `Simulation_cases/`) ainda precisam ser validados.
 
 ---
 
@@ -363,7 +368,7 @@ A figura é salva por padrão como `<NomeDoPoço>_perfil_abertura.png`, ao lado 
 - Há caminhos absolutos fixos em `IGeo.f90` (modo de teste) e nos scripts `.bat`.
 - Todos os arquivos estão em UTF-8 (sem BOM), mas a maioria usa terminações de linha CRLF (Windows).
 - Vários workflows antigos (uniaxial, triaxial, Terzaghi, carga lateral etc.) estão comentados em `GeomechWell_main_these.f90` e não estão disponíveis nesta versão.
-- O repositório não tem testes automatizados. Os arquivos em `Simulation_cases/` servem como casos de verificação manual.
+- As correções do acoplamento da fratura (balanço de massa, lei cúbica, liberação de nós, carga da face) mudam os resultados dos casos de `Simulation_cases/` em relação aos do autor; eles não foram comparados com o build Intel original.
 
 ---
 
